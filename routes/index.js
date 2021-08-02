@@ -1,5 +1,6 @@
 import express from "express";
 import actions from "../methods/actions";
+import actionsTraining from "../methods/training";
 import passport from "passport";
 
 const router = express.Router();
@@ -25,5 +26,5 @@ router.get("/getinfo", function (req, res, next) {
     actions.getinfo(req, res, user);
   })(req, res, next);
 });
-
+router.get("/getTraining", actionsTraining.getTraining);
 export default router;
