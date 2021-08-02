@@ -1,5 +1,5 @@
 import { User } from "../models";
-import { saveUrlImageToS3 } from "../config/utils";
+import { saveUrlImageToS3 } from "./utils";
 import { bucket_user } from "../config/config";
 
 var functions = {
@@ -86,10 +86,17 @@ var functions = {
       newUser.email = profile.emails[0].value;
       newUser.active = true;
       newUser.terms = false;
-      newUser.gender = profile.gender == "male" ? "m" : "f";
-      newUser.profile_image = profile.photos[0].value
-        ? profile.photos[0].value
-        : defaultImage;
+      newUser.profileImage = profile.photos[0].value;
+      switch (profle.gender) {
+        case "male":
+          newUser.gender = "m";
+          break;
+        case "female":
+          newUser.gender = "f";
+          break;
+        default:
+          newUser.gender = "";
+      }
       if (birthday) {
         newUser.birth =
           birthday.substr(6, 4) +
@@ -101,7 +108,7 @@ var functions = {
 
       newUser.save(function (err, user) {
         if (err) {
-          res.json({ success: false, msg: "Failed to save" });
+          res.json({ success: false, msg: "Failed to save " + err });
         } else {
           const jwt = user.issueJWT();
           res.status(200).json({
@@ -141,11 +148,20 @@ var functions = {
           newUser.name = profile.name.givenName;
           newUser.surname = profile.name.familyName;
           // newUser.password = accessToken;
-          newUser.mail = profile.emails[0].value;
+          newUser.email = profile.emails[0].value;
           newUser.active = true;
-          newUser.gender = profile.gender == "male" ? "m" : "f";
           newUser.isNotifMailConfirmed = true;
           newUser.terms = false;
+          switch (profle.gender) {
+            case "male":
+              newUser.gender = "m";
+              break;
+            case "female":
+              newUser.gender = "f";
+              break;
+            default:
+              newUser.gender = "";
+          }
           if (birthday)
             newUser.birth =
               birthday.substr(6, 4) +
@@ -154,7 +170,7 @@ var functions = {
               "" +
               birthday.substr(3, 2); // da MM/DD/YYYY a YYYYMMDD
           if (response) {
-            newUser.profile_image = response.Location;
+            newUser.profileImage = response.Location;
           }
 
           newUser.save(function (err, user) {

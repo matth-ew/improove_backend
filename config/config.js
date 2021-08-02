@@ -11,6 +11,6 @@ export const googleSecret = env.GOOGLE_SECRET;
 export const s3AccessId = process.env.S3_ID;
 export const s3SecretKey = process.env.S3_SECRET;
 export const bucket_user = process.env.BUCKET_USER || "improove-user-media";
-export const bucket_train = process.env.BUCKET_TRAIN || "improove-train-media";
+export const bucket_train = process.env.BUCKET_TRAIN || "improove-trainings";
 export const apiPort = env.API_PORT || 3001;
 export const tokenSecret = env.ACCESS_TOKEN || "banana";
