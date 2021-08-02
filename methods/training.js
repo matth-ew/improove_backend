@@ -6,7 +6,7 @@ var functions = {
   getTraining: function (req, res) {
     id = req.id;
     let query = Training.find();
-    query.where((_id = id));
+    query.where((id = id));
     query.exec((err, training) => {
       if (err) {
         //console.log(err)
