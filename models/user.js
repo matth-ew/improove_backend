@@ -2,16 +2,19 @@ import mongoose from "mongoose";
 import bcrypt from "bcryptjs";
 import { nodeEnv, tokenSecret } from "../config/config";
 import jwt from "jsonwebtoken";
+import Counter from "./counter";
 const Schema = mongoose.Schema;
 
 const UsersSchema = new Schema(
   {
+    _id: Number,
     name: { type: String, default: "" },
     surname: { type: String, default: "" },
     password: { type: String, default: "", select: false },
     testPass: { type: String, select: false },
     terms: { type: Boolean, default: true },
     marketing: { type: Boolean, default: false },
+    profileImage: { type: String, default: "" },
     email: { type: String, default: "" },
     birth: { type: Number, default: -1 },
     gender: { type: String, default: "" },
@@ -51,34 +54,33 @@ UsersSchema.methods = {
   },
 };
 
-// UsersSchema.pre("save", function (next) {
-//   var doc = this;
-//   if (this._id > 0) {
-//     //console.log("in pre-save");
-//     return next();
-//   }
-
-//   Counter.findByIdAndUpdate(
-//     { _id: "entityId" },
-//     { $inc: { seq: 1 } },
-//     { new: true, upsert: true }
-//   )
-//     .then(function (counter, error) {
-//       if (error) {
-//         return next(error);
-//       }
-//       doc._id = counter.seq;
-//       //console.log("CONTEGGIO",counter.seq);
-//       //next();
-//     })
-//     .catch(function (error) {
-//       console.error("counter error-> : " + error);
-//       throw error;
-//     })
-//     .then(function () {
-//       next();
-//     });
-// });
+UsersSchema.pre("save", function (next) {
+  var doc = this;
+  if (this._id > 0) {
+    //console.log("in pre-save");
+    return next();
+  }
+  Counter.findByIdAndUpdate(
+    { _id: "entityId" },
+    { $inc: { seq: 1 } },
+    { new: true, upsert: true }
+  )
+    .then(function (counter, error) {
+      if (error) {
+        return next(error);
+      }
+      doc._id = counter.seq;
+      //console.log("CONTEGGIO",counter.seq);
+      //next();
+    })
+    .catch(function (error) {
+      console.error("counter error-> : " + error);
+      throw error;
+    })
+    .then(function () {
+      next();
+    });
+});
 
 UsersSchema.pre("save", function (next) {
   var doc = this;

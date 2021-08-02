@@ -1,5 +1,6 @@
 import express from "express";
 import actions from "../methods/actions";
+import { loggedIn } from "../methods/utils";
 import passport from "passport";
 
 const router = express.Router();
@@ -20,10 +21,6 @@ router.post("/authenticate-google", function (req, res, next) {
     actions.authenticateGoogle(req, res, user, profile);
   })(req, res, next);
 });
-router.get("/getinfo", function (req, res, next) {
-  passport.authenticate("jwt", function (err, user) {
-    actions.getinfo(req, res, user);
-  })(req, res, next);
-});
+router.get("/getinfo", loggedIn, actions.getinfo);
 
 export default router;
