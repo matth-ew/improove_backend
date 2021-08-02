@@ -22,7 +22,7 @@ router.post("/authenticate-google", function (req, res, next) {
     actions.authenticateGoogle(req, res, user, profile);
   })(req, res, next);
 });
-router.get("/getTraining", actionsTraining.getTraining);
+router.post("/getTraining", actionsTraining.getTraining);
 router.get("/getinfo", loggedIn, actions.getinfo);
 
 export default router;

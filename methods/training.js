@@ -1,15 +1,12 @@
 import { Training } from "../models";
-import { saveUrlImageToS3 } from "../config/utils";
-import { bucket_user } from "../config/config";
 
 var functions = {
   getTraining: function (req, res) {
-    id = req.id;
-    let query = Training.find();
-    query.where((id = id));
+    const id = req.body.id;
+    let query = Training.findById(id);
     query.exec((err, training) => {
       if (err) {
-        //console.log(err)
+        console.log(err);
         return res.json({
           success: false,
           error: err,
@@ -23,3 +20,5 @@ var functions = {
     });
   },
 };
+
+export default functions;
