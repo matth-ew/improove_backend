@@ -19,6 +19,7 @@
     "@babel/core": "^7.14.8",
     "@babel/node": "^7.14.7",
     "@babel/preset-env": "^7.14.8",
+    "async": "^3.2.0",
     "aws-sdk": "^2.958.0",
     "bcryptjs": "^2.4.3",
     "body-parser": "^1.19.0",

@@ -5,11 +5,11 @@ const Schema = mongoose.Schema;
 const TrainingsSchema = new Schema(
   {
     _id: Number,
-    trainer_id: Number,
+    trainer_id: { type: Number, ref: "User" },
     title: { type: String, default: "" },
     description: { type: String, default: "" },
     preview: { type: String, default: "" },
-    category: { type: String, select: false },
+    category: { type: String, default: "" },
     exercises: [ExerciseSchema],
   },
   { timestamps: true }
