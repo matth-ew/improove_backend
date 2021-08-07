@@ -67,7 +67,7 @@ var functions = {
     // Logica con Refresh Token?
   },
   authenticateFacebook: function (req, res, user, profile) {
-    console.log("FACEBOOK AUTH", user, profile);
+    // console.log("FACEBOOK AUTH", user, profile);
     if (user) {
       const jwt = user.issueJWT();
       res.status(200).json({
@@ -128,7 +128,7 @@ var functions = {
     }
   },
   authenticateGoogle: function (req, res, user, profile) {
-    console.log("GOOGLE AUTH", user, profile);
+    // console.log("GOOGLE AUTH", user, profile);
     if (user) {
       const jwt = user.issueJWT();
       res.status(200).json({
