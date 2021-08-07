@@ -18,10 +18,27 @@ const UsersSchema = new Schema(
     email: { type: String, default: "" },
     birth: { type: Number, default: -1 },
     gender: { type: String, default: "" },
+    savedTrainings: { type: [SavedTrainingsSchema], default: [] },
+    closedTrainings: { type: [ClosedTrainingsSchema], default: [] },
     googleId: String,
     facebookId: String,
   },
   { timestamps: true, toObject: { virtuals: true }, toJSON: { virtuals: true } }
+);
+
+const SavedTrainingsSchema = new Schema(
+  {
+    trainingId: { type: Number, ref: "Trainings" },
+    seenExercises: [mongoose.ObjectId],
+  },
+  { _id: false }
+);
+const ClosedTrainingsSchema = new Schema(
+  {
+    trainingId: { type: Number, ref: "Trainings" },
+    challengeUrl: String,
+  },
+  { _id: false }
 );
 
 UsersSchema.methods = {
