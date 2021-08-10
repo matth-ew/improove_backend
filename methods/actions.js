@@ -196,10 +196,6 @@ var functions = {
       });
     }
   },
-  getinfo: function (req, res, user) {
-    console.log("UE GET INFO", user);
-    return res.json({ success: true, msg: "Hello " + user.email });
-  },
 };
 
 export default functions;

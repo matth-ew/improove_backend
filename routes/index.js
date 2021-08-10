@@ -26,6 +26,8 @@ router.post("/authenticate-google", function (req, res, next) {
 router.post("/getTrainings", actionsTraining.getTrainings);
 router.post("/getTrainingById", actionsTraining.getTrainingById);
 router.post("/getTrainerById", actionsUser.getTrainerById);
-router.get("/getinfo", loggedIn, actions.getinfo);
+router.get("/getinfo", loggedIn, actionsUser.getinfo);
+router.post("/userAddSavedTraining", loggedIn, actionsUser.saveTraining);
+router.post("/userDeleteSavedTraining", loggedIn, actionsUser.removeTraining);
 
 export default router;

@@ -31,8 +31,10 @@ export function saveUrlImageToS3(url, { bucket, key, type }, callback) {
 
 export function loggedIn(req, res, next) {
   passport.authenticate("jwt", function (err, user) {
-    if (user) next(user);
-    else
+    if (user) {
+      req.user = user;
+      next();
+    } else
       return res.status(401).json({
         success: false,
         msg: "Not authorized",

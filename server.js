@@ -69,6 +69,12 @@ app.use(passport.initialize());
 myPassport(passport);
 
 if (nodeEnv === "development") {
+  router.use(logger("dev"));
+} else {
+  router.use(logger("tiny"));
+}
+
+if (nodeEnv === "development") {
   app.use(logger("dev"));
 } else {
   app.use(logger("tiny"));

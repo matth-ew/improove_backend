@@ -4,7 +4,7 @@ import async from "async";
 
 var functions = {
   getTrainings: function (req, res) {
-    let query = Training.where("_id").lt(20);
+    let query = Training.find({});
     query
       .select("_id title preview category")
       .populate({ path: "trainer_id", select: "_id profileImage" })
@@ -16,16 +16,16 @@ var functions = {
             error: err,
           });
         } else {
-          console.log("trainings", trainings);
+          // console.log("trainings", trainings);
           return res.json({
-            success: false,
+            success: true,
             result: trainings,
           });
         }
       });
   },
   getTrainingById: function (req, res) {
-    let query = Training.where("_id").equals(req.body.id);
+    let query = Training.findOne().where("_id").equals(req.body.id);
     query
       .populate({ path: "trainer_id", select: "_id profileImage" })
       .exec((err, training) => {
@@ -37,7 +37,7 @@ var functions = {
           });
         } else {
           return res.json({
-            success: false,
+            success: true,
             result: training,
           });
         }
