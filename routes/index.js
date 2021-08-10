@@ -1,6 +1,7 @@
 import express from "express";
 import actions from "../methods/actions";
 import actionsTraining from "../methods/training";
+import actionsUser from "../methods/user";
 import { loggedIn } from "../methods/utils";
 import passport from "passport";
 
@@ -24,6 +25,7 @@ router.post("/authenticate-google", function (req, res, next) {
 });
 router.post("/getTrainings", actionsTraining.getTrainings);
 router.post("/getTrainingById", actionsTraining.getTrainingById);
+router.post("/getTrainerById", actionsUser.getTrainerById);
 router.get("/getinfo", loggedIn, actions.getinfo);
 
 export default router;

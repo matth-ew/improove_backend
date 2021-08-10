@@ -15,6 +15,7 @@ const UsersSchema = new Schema(
     terms: { type: Boolean, default: true },
     marketing: { type: Boolean, default: false },
     profileImage: { type: String, default: "" },
+    trainerDescription: { type: String, default: "" },
     email: { type: String, default: "" },
     birth: { type: Number, default: -1 },
     gender: { type: String, default: "" },

@@ -19,6 +19,24 @@ var functions = {
       }
     });
   },
+  getTrainerById: function (req, res) {
+    let query = Trainer.where("_id").equals(req.body.id);
+    query.select("name surname _id profileImage trainerDescription");
+    query.exec((err, training) => {
+      if (err) {
+        console.log("error in load trainer by id", err);
+        return res.json({
+          success: false,
+          error: err,
+        });
+      } else {
+        return res.json({
+          success: false,
+          result: trainer,
+        });
+      }
+    });
+  },
 };
 
 export default functions;
