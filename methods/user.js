@@ -1,8 +1,50 @@
 import { User } from "../models";
+import { saveImageToS3, deleteFromS3 } from "./utils";
+import { bucket_user } from "../config/config";
 
 var functions = {
   getinfo: function (req, res) {
     return res.json({ success: true, user: req.user });
+  },
+  changeImage: function (req, res) {
+    console.log("REQ.FILE", req.file);
+    saveImageToS3(
+      req.file.buffer,
+      {
+        bucket: bucket_user,
+        key: req.user.id,
+        type: req.file.originalname.split(".")[1],
+      },
+      (err, response) => {
+        if (err) {
+          return res.json({ success: false, error: err });
+        } else if (response) {
+          let query = User.updateOne(
+            { _id: req.user.id },
+            {
+              profileImage: response.Location,
+            }
+          );
+          query.exec((err2) => {
+            if (err2)
+              return res.json({
+                success: false,
+                error: err2,
+              });
+            else {
+              var key = req.user.profileImage.split("/");
+              deleteFromS3(
+                { bucket: bucket_user, key: key[key.length - 1] },
+                (err, data) => {
+                  console.log("DELETE", req.user.profileImage, err, data);
+                }
+              );
+              return res.json({ success: true, image: response.Location });
+            }
+          });
+        }
+      }
+    );
   },
   saveTraining: function (req, res) {
     let query = User.updateOne(

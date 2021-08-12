@@ -3,12 +3,39 @@ import S3 from "aws-sdk/clients/s3";
 import uuid from "uuid"; // generate random strings
 import { s3AccessId, s3SecretKey } from "../config/config";
 import passport from "passport";
+import sharp from "sharp";
 
 var s3 = new S3({
   accessKeyId: s3AccessId,
   secretAccessKey: s3SecretKey,
   region: "eu-west-1",
 });
+
+export function saveImageToS3(file, { bucket, key, type }, callback) {
+  if (file) {
+    sharp(file)
+      .webp()
+      .toBuffer()
+      .then((data) => {
+        const params = {
+          Bucket: bucket,
+          Key: key + "-" + uuid() + ".webp",
+          Body: data,
+          ACL: "public-read",
+          CacheControl: "max-age=31536000",
+        };
+        var options = { partSize: 10 * 1024 * 1024, queueSize: 1 };
+        s3.upload(params, options, callback);
+      })
+      .catch((err) => callback(err));
+  } else {
+    callback();
+  }
+}
+
+export function deleteFromS3({ bucket, key }, callback) {
+  s3.deleteObject({ Bucket: bucket, Key: key }, callback);
+}
 
 export function saveUrlImageToS3(url, { bucket, key, type }, callback) {
   if (url) {
