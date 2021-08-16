@@ -4,6 +4,7 @@ import actionsTraining from "../methods/training";
 import actionsUser from "../methods/user";
 import { loggedIn } from "../methods/utils";
 import passport from "passport";
+import multer from "multer";
 
 const router = express.Router();
 
@@ -44,6 +45,12 @@ router.post(
   actionsTraining.setExerciseMistakes
 );
 router.get("/getinfo", loggedIn, actionsUser.getinfo);
+router.post(
+  "/userChangeProfileImage",
+  loggedIn,
+  multer().single("image"),
+  actionsUser.changeImage
+);
 router.post("/userAddSavedTraining", loggedIn, actionsUser.saveTraining);
 router.post("/userDeleteSavedTraining", loggedIn, actionsUser.removeTraining);
 
