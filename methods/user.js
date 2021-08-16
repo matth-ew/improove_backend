@@ -1,6 +1,7 @@
-import { User, Trainign } from "../models";
+import { User, Training } from "../models";
 import { saveImageToS3, deleteFromS3 } from "./utils";
 import { bucket_user } from "../config/config";
+import async from "async";
 
 var functions = {
   getinfo: function (req, res) {
