@@ -26,6 +26,23 @@ router.post("/authenticate-google", function (req, res, next) {
 router.post("/getTrainings", actionsTraining.getTrainings);
 router.post("/getTrainingById", actionsTraining.getTrainingById);
 router.post("/getTrainerById", actionsUser.getTrainerById);
+router.post(
+  "/setTrainerDescription",
+  loggedIn,
+  actionsUser.setTrainerDescription
+);
+router.post(
+  "/setTrainingDescription",
+  loggedIn,
+  actionsTraining.setTrainingDescription
+);
+router.post("/setExerciseTips", loggedIn, actionsTraining.setExerciseTips);
+router.post("/setExerciseHow", loggedIn, actionsTraining.setExerciseHow);
+router.post(
+  "/setExerciseMistakes",
+  loggedIn,
+  actionsTraining.setExerciseMistakes
+);
 router.get("/getinfo", loggedIn, actionsUser.getinfo);
 router.post("/userAddSavedTraining", loggedIn, actionsUser.saveTraining);
 router.post("/userDeleteSavedTraining", loggedIn, actionsUser.removeTraining);

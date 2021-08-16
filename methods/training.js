@@ -43,6 +43,105 @@ var functions = {
         }
       });
   },
+  setTrainingDescription: function (req, res) {
+    let query = Training.updateOne(
+      { _id: req.body.id, trainer_id: req.user._id },
+      {
+        $set: {
+          description: req.body.text,
+        },
+      }
+    );
+    query.exec((err /*, mongo_res*/) => {
+      if (err)
+        return res.json({
+          success: false,
+          error: err,
+        });
+      else return res.json({ success: true });
+    });
+  },
+  setExerciseMistakes: function (req, res) {
+    let query = Training.updateOne(
+      {
+        _id: req.body.id,
+        trainer_id: req.user._id,
+        exercises: {
+          $elemMatch: {
+            title: req.body.title,
+          },
+        },
+      },
+      {
+        $set: {
+          "exercises.$.mistakes": req.body.mistakes,
+        },
+      }
+    );
+    query.exec((err /*, mongo_res*/) => {
+      if (err)
+        return res.json({
+          success: false,
+          error: err,
+        });
+      else return res.json({ success: true });
+    });
+  },
+  setExerciseHow: function (req, res) {
+    let query = Training.updateOne(
+      {
+        _id: req.body.id,
+        trainer_id: req.user._id,
+        exercises: {
+          $elemMatch: {
+            title: req.body.title,
+          },
+        },
+      },
+      {
+        $set: {
+          "exercises.$.how": req.body.how,
+        },
+      }
+    );
+    query.exec((err /*, mongo_res*/) => {
+      if (err)
+        return res.json({
+          success: false,
+          error: err,
+        });
+      else return res.json({ success: true });
+    });
+  },
+  setExerciseTips: function (req, res) {
+    Training.findOneAndUpdate(
+      {
+        _id: req.body.id,
+        trainer_id: req.user._id,
+        exercises: {
+          $elemMatch: {
+            title: req.body.title,
+          },
+        },
+      },
+      {
+        $set: {
+          "exercises.$.tips": req.body.tips,
+        },
+      },
+      function (err, training) {
+        if (err) {
+          console.log("err", err);
+          return res.json({
+            success: false,
+            error: err,
+          });
+        } else {
+          return res.json({ success: true });
+        }
+      }
+    );
+  },
 };
 
 export default functions;
