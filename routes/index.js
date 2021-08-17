@@ -45,6 +45,7 @@ router.post(
   actionsTraining.setExerciseMistakes
 );
 router.get("/getinfo", loggedIn, actionsUser.getinfo);
+router.post("/userChangeProfileInfo", loggedIn, actionsUser.changeInfo);
 router.post(
   "/userChangeProfileImage",
   loggedIn,

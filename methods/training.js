@@ -4,7 +4,9 @@ import async from "async";
 
 var functions = {
   getTrainings: function (req, res) {
-    let query = Training.find({});
+    let query = Training.find();
+    if (req.body.ids && req.body.ids.length > 0)
+      query.where("_id").in(req.body.ids);
     query
       .select("_id title preview category")
       .populate({ path: "trainer_id", select: "_id profileImage" })
