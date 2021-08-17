@@ -7,7 +7,47 @@ var functions = {
   getinfo: function (req, res) {
     return res.json({ success: true, user: req.user });
   },
-  changeImage: function (req, res) {
+  changeTrainerImage: function (req, res) {
+    console.log("REQ.FILE", req.file);
+    saveImageToS3(
+      req.file.buffer,
+      {
+        bucket: bucket_user,
+        key: req.user.id,
+        type: req.file.originalname.split(".")[1],
+      },
+      (err, response) => {
+        if (err) {
+          return res.json({ success: false, error: err });
+        } else if (response) {
+          let query = User.updateOne(
+            { _id: req.user.id },
+            {
+              trainerImage: response.Location,
+            }
+          );
+          query.exec((err2) => {
+            if (err2)
+              return res.json({
+                success: false,
+                error: err2,
+              });
+            else {
+              var key = req.user.trainerImage.split("/");
+              deleteFromS3(
+                { bucket: bucket_user, key: key[key.length - 1] },
+                (err, data) => {
+                  console.log("DELETE", req.user.trainerImage, err, data);
+                }
+              );
+              return res.json({ success: true, image: response.Location });
+            }
+          });
+        }
+      }
+    );
+  },
+  changeProfileImage: function (req, res) {
     console.log("REQ.FILE", req.file);
     saveImageToS3(
       req.file.buffer,
@@ -151,7 +191,9 @@ var functions = {
       [
         function (done) {
           let query = User.findOne({ _id: req.body.id });
-          query.select("name surname _id profileImage trainerDescription");
+          query.select(
+            "name surname _id profileImage trainerDescription trainerImage"
+          );
           query.exec((err, trainer) => {
             if (err) {
               console.log("error in load trainer by id", err);

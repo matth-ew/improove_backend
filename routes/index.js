@@ -49,7 +49,13 @@ router.post(
   "/userChangeProfileImage",
   loggedIn,
   multer().single("image"),
-  actionsUser.changeImage
+  actionsUser.changeProfileImage
+);
+router.post(
+  "/userChangeTrainerImage",
+  loggedIn,
+  multer().single("image"),
+  actionsUser.changeTrainerImage
 );
 router.post("/userAddSavedTraining", loggedIn, actionsUser.saveTraining);
 router.post("/userDeleteSavedTraining", loggedIn, actionsUser.removeTraining);
