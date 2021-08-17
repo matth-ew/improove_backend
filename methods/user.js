@@ -165,7 +165,7 @@ var functions = {
           if (trainer) {
             let query = Training.find({});
             query.where("trainer_id").equals(trainer._id);
-            query.select("title preview");
+            query.select("title preview category");
             query.exec((err, trainings) => {
               if (err) {
                 console.log(err);
