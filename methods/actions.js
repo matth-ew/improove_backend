@@ -87,7 +87,7 @@ var functions = {
       newUser.active = true;
       newUser.terms = false;
       newUser.profileImage = profile.photos[0].value;
-      switch (profle.gender) {
+      switch (profile.gender) {
         case "male":
           newUser.gender = "m";
           break;
@@ -152,7 +152,7 @@ var functions = {
           newUser.active = true;
           newUser.isNotifMailConfirmed = true;
           newUser.terms = false;
-          switch (profle.gender) {
+          switch (profile.gender) {
             case "male":
               newUser.gender = "m";
               break;

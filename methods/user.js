@@ -47,6 +47,23 @@ var functions = {
       }
     );
   },
+  changeInfo: function (req, res) {
+    let query = User.updateOne(
+      { _id: req.user.id },
+      {
+        name: req.body.name,
+        surname: req.body.surname,
+      }
+    );
+    query.exec((err /*, mongo_res*/) => {
+      if (err)
+        return res.json({
+          success: false,
+          error: err,
+        });
+      else return res.json({ success: true });
+    });
+  },
   changeProfileImage: function (req, res) {
     console.log("REQ.FILE", req.file);
     saveImageToS3(
