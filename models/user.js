@@ -23,6 +23,7 @@ const UsersSchema = new Schema(
     savedTrainings: { type: [SavedTrainingsSchema], default: [] },
     closedTrainings: { type: [ClosedTrainingsSchema], default: [] },
     googleId: String,
+    appleId: String,
     facebookId: String,
   },
   { timestamps: true, toObject: { virtuals: true }, toJSON: { virtuals: true } }

@@ -24,6 +24,11 @@ router.post("/authenticate-google", function (req, res, next) {
     actions.authenticateGoogle(req, res, user, profile);
   })(req, res, next);
 });
+router.post("/authenticate-apple", function (req, res, next) {
+  passport.authenticate("apple-token", function (err, user, profile) {
+    actions.authenticateApple(req, res, user, profile);
+  })(req, res, next);
+});
 router.post("/getTrainings", actionsTraining.getTrainings);
 router.post("/getTrainingById", actionsTraining.getTrainingById);
 router.post("/getTrainerById", actionsUser.getTrainerById);

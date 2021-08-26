@@ -127,6 +127,73 @@ var functions = {
       });
     }
   },
+  authenticateApple: function (req, res, user, profile) {
+    // console.log("APPLE AUTH", user, profile);
+    if (user) {
+      const jwt = user.issueJWT();
+      res.status(200).json({
+        success: true,
+        user: user,
+        token: jwt.token,
+        expiresIn: jwt.expiresIn,
+      });
+    } else if (profile) {
+      let newUser = new User();
+      const {
+        id,
+        name: { firstName, lastName },
+        email,
+      } = profile;
+
+      //const birthday = profile._json.birthday;
+      newUser.appleId = id;
+      newUser.name = firstName;
+      newUser.surname = lastName;
+      // newUser.password = accessToken;
+      newUser.email = email;
+      newUser.active = true;
+      newUser.terms = false;
+      //newUser.profileImage = profile.photos[0].value;
+      // switch (profile.gender) {
+      //   case "male":
+      //     newUser.gender = "m";
+      //     break;
+      //   case "female":
+      //     newUser.gender = "f";
+      //     break;
+      //   default:
+      //     newUser.gender = "";
+      // }
+      // if (birthday) {
+      //   newUser.birth =
+      //     birthday.substr(6, 4) +
+      //     "" +
+      //     birthday.substr(0, 2) +
+      //     "" +
+      //     birthday.substr(3, 2); // da MM/DD/YYYY a YYYYMMDD
+      // }
+
+      newUser.save(function (err, user) {
+        if (err) {
+          res.json({ success: false, msg: "Failed to save " + err });
+        } else {
+          const jwt = user.issueJWT();
+          res.status(200).json({
+            success: true,
+            user: user,
+            token: jwt.token,
+            expiresIn: jwt.expiresIn,
+            msg: "Successfully saved",
+          });
+        }
+      });
+    } else {
+      res.status(403).send({
+        success: false,
+        msg: "Authentication failed",
+      });
+    }
+  },
   authenticateGoogle: function (req, res, user, profile) {
     // console.log("GOOGLE AUTH", user, profile);
     if (user) {
