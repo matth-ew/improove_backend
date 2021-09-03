@@ -9,6 +9,9 @@ import {
   facebookSecret,
   googleId,
   googleSecret,
+  appleTeam,
+  appleId,
+  appleSecret,
 } from "./config";
 
 const jwtStrategy = new JwtStrategy(
@@ -66,10 +69,10 @@ const googleStrategy = new GoogleTokenStrategy(
 
 const appleStrategy = new AppleStrategy(
   {
-    clientID: "com.example.improoveFlutter", // Services ID
-    teamID: "1234567890", // Team ID of your Apple Developer Account
-    keyID: "ABCDEFGHIJ", // Key ID, received from https://developer.apple.com/account/resources/authkeys/list
-    key: "EMPTY", // fs.readFileSync(path.join("path", "to", "AuthKey_XYZ1234567.p8")), // Private key, downloaded from https://developer.apple.com/account/resources/authkeys/list
+    clientID: "fit.improove.app", // Services ID
+    teamID: appleTeam, // Team ID of your Apple Developer Account
+    keyID: appleId, //"UM869RNW7D", // Key ID, received from https://developer.apple.com/account/resources/authkeys/list
+    key: appleSecret, //"EMPTY", // fs.readFileSync(path.join("path", "to", "AuthKey_XYZ1234567.p8")), // Private key, downloaded from https://developer.apple.com/account/resources/authkeys/list
     scope: ["name", "email"],
     callbackURL: "https://example.com/auth/apple/callback",
   },
