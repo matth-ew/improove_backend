@@ -1,34 +1,15 @@
 import express from "express";
 import bodyParser from "body-parser";
 import passport from "passport";
-import logger from "morgan";
+// import logger from "morgan";
 import cors from "cors";
-import uuid from "uuid";
+// import uuid from "uuid";
 import compression from "compression";
 import helmet from "helmet"; // security properties
 
 import {
   // allowedOrigins,
   apiPort,
-  // apiProtocol,
-  // redisEndpoint,
-  // redisPort,
-  // cookieSecure,
-  // cookieSecret,
-  // s3AccessId,
-  // s3SecretKey,
-  // mongoUri,
-  facebookId,
-  facebookSecret,
-  // instagramId,
-  // instagramSecret,
-  // googleId,
-  // googleSecret,
-  nodeEnv,
-  // bucket_home,
-  // bucket_user,
-  // privateVAPID,
-  // publicVAPID,
 } from "./config/config";
 
 import { connectDB } from "./config/db";
@@ -68,16 +49,16 @@ app.use("/api", router);
 app.use(passport.initialize());
 myPassport(passport);
 
-if (nodeEnv === "development") {
-  router.use(logger("dev"));
-} else {
-  router.use(logger("tiny"));
-}
+// if (nodeEnv === "development") {
+//   router.use(logger("dev"));
+// } else {
+//   router.use(logger("tiny"));
+// }
 
-if (nodeEnv === "development") {
-  app.use(logger("dev"));
-} else {
-  app.use(logger("tiny"));
-}
+// if (nodeEnv === "development") {
+//   app.use(logger("dev"));
+// } else {
+//   app.use(logger("tiny"));
+// }
 
 app.listen(apiPort, () => console.log(`Listening on port ${apiPort}`));

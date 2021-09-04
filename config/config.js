@@ -8,6 +8,7 @@ export const facebookId = env.FACEBOOK_ID;
 export const facebookSecret = env.FACEBOOK_SECRET;
 export const googleId = env.GOOGLE_ID;
 export const googleSecret = env.GOOGLE_SECRET;
+export const androidPackageId = env.ANDROID_PACKAGE_IDENTIFIER;
 export const appleTeam = env.APPLE_TEAM;
 export const appleId = env.APPLE_ID;
 export const appleSecret = env.APPLE_SECRET;

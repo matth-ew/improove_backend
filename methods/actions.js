@@ -1,6 +1,6 @@
 import { User } from "../models";
 import { saveUrlImageToS3 } from "./utils";
-import { bucket_user } from "../config/config";
+import { bucket_user, androidPackageId } from "../config/config";
 
 var functions = {
   addNew: function (req, res) {
@@ -126,6 +126,15 @@ var functions = {
         msg: "Authentication failed",
       });
     }
+  },
+  callbackApple: function (req, res) {
+    const redirect = `intent://callback?${new URLSearchParams(
+      req.body
+    ).toString()}#Intent;package=${androidPackageId};scheme=signinwithapple;end`;
+
+    console.log(`Redirecting to ${redirect}`);
+
+    res.redirect(307, redirect);
   },
   authenticateApple: function (req, res, user, profile) {
     // console.log("APPLE AUTH", user, profile);

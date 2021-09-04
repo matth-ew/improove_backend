@@ -5,8 +5,16 @@ import actionsUser from "../methods/user";
 import { loggedIn } from "../methods/utils";
 import passport from "passport";
 import multer from "multer";
+import logger from "morgan";
+import { nodeEnv } from "../config/config";
 
 const router = express.Router();
+
+if (nodeEnv === "development") {
+  router.use(logger("dev"));
+} else {
+  router.use(logger("tiny"));
+}
 
 router.get("/", (req, res) => {
   res.send("Hello Improove API");
@@ -24,11 +32,14 @@ router.post("/authenticate-google", function (req, res, next) {
     actions.authenticateGoogle(req, res, user, profile);
   })(req, res, next);
 });
+
+router.post("/redirect-apple", actions.callbackApple);
 router.post("/authenticate-apple", function (req, res, next) {
   passport.authenticate("apple-token", function (err, user, profile) {
     actions.authenticateApple(req, res, user, profile);
   })(req, res, next);
 });
+
 router.post("/getTrainings", actionsTraining.getTrainings);
 router.post("/getTrainingById", actionsTraining.getTrainingById);
 router.post("/getTrainerById", actionsUser.getTrainerById);
