@@ -148,16 +148,12 @@ var functions = {
       });
     } else if (profile) {
       let newUser = new User();
-      const {
-        id,
-        name: { firstName, lastName },
-        email,
-      } = profile;
+      const { id, name, email } = profile;
 
       //const birthday = profile._json.birthday;
       newUser.appleId = id;
-      newUser.name = firstName;
-      newUser.surname = lastName;
+      newUser.name = name ? name.firstName : "";
+      newUser.surname = name ? name.lastName : "";
       // newUser.password = accessToken;
       newUser.email = email;
       newUser.active = true;

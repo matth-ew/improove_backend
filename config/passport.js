@@ -12,6 +12,8 @@ import {
   appleTeam,
   appleId,
   appleSecret,
+  appleServiceId,
+  appleBundleId,
 } from "./config";
 
 const jwtStrategy = new JwtStrategy(
@@ -66,17 +68,31 @@ const googleStrategy = new GoogleTokenStrategy(
     });
   }
 );
-
 const appleStrategy = new AppleStrategy(
   {
-    clientID: "fit.improove.app", // Services ID
+    clientID: appleBundleId, // Services ID
     teamID: appleTeam, // Team ID of your Apple Developer Account
     keyID: appleId, //"UM869RNW7D", // Key ID, received from https://developer.apple.com/account/resources/authkeys/list
     key: appleSecret, //"EMPTY", // fs.readFileSync(path.join("path", "to", "AuthKey_XYZ1234567.p8")), // Private key, downloaded from https://developer.apple.com/account/resources/authkeys/list
     scope: ["name", "email"],
-    callbackURL: "https://example.com/auth/apple/callback",
+    callbackURL: "https://improove.fit/api/redirect-apple",
   },
-  (accessToken, refreshToken, profile, cb) => {
+  (accessToken, refreshToken, profile, done) => {
+    User.findOne({ appleId: profile.id }, function (err, user) {
+      done(err, user, profile);
+    });
+  }
+);
+const appleWebStrategy = new AppleStrategy(
+  {
+    clientID: appleServiceId, // Services ID
+    teamID: appleTeam, // Team ID of your Apple Developer Account
+    keyID: appleId, //"UM869RNW7D", // Key ID, received from https://developer.apple.com/account/resources/authkeys/list
+    key: appleSecret, //"EMPTY", // fs.readFileSync(path.join("path", "to", "AuthKey_XYZ1234567.p8")), // Private key, downloaded from https://developer.apple.com/account/resources/authkeys/list
+    scope: ["name", "email"],
+    callbackURL: "https://improove.fit/api/redirect-apple",
+  },
+  (accessToken, refreshToken, profile, done) => {
     User.findOne({ appleId: profile.id }, function (err, user) {
       done(err, user, profile);
     });
@@ -88,4 +104,5 @@ export default function (passport) {
   passport.use("facebook-token", facebookStrategy);
   passport.use("google-token", googleStrategy);
   passport.use("apple-token", appleStrategy);
+  passport.use("apple-web-token", appleWebStrategy);
 }

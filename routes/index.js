@@ -35,7 +35,10 @@ router.post("/authenticate-google", function (req, res, next) {
 
 router.post("/redirect-apple", actions.callbackApple);
 router.post("/authenticate-apple", function (req, res, next) {
-  passport.authenticate("apple-token", function (err, user, profile) {
+  const appleStrategy = req.body.useBundleId
+    ? "apple-token"
+    : "apple-web-token";
+  passport.authenticate(appleStrategy, function (err, user, profile) {
     actions.authenticateApple(req, res, user, profile);
   })(req, res, next);
 });
