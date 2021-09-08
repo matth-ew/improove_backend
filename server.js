@@ -6,6 +6,7 @@ import cors from "cors";
 // import uuid from "uuid";
 import compression from "compression";
 import helmet from "helmet"; // security properties
+import path from "path";
 
 import {
   // allowedOrigins,
@@ -48,6 +49,16 @@ app.use(bodyParser.json());
 app.use("/api", router);
 app.use(passport.initialize());
 myPassport(passport);
+
+// app.get("/", function (req, res) {
+//   res.sendFile(path.join(__dirname, "/index.html"));
+// });
+app.get("/privacy", function (req, res) {
+  res.sendFile(path.join(__dirname, "www/privacy.html"));
+});
+app.get("/terms", function (req, res) {
+  res.sendFile(path.join(__dirname, "www/terms.html"));
+});
 
 // if (nodeEnv === "development") {
 //   router.use(logger("dev"));
