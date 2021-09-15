@@ -7,6 +7,9 @@ var functions = {
     let query = Training.find();
     if (req.body.ids && req.body.ids.length > 0)
       query.where("_id").in(req.body.ids);
+    if (req.body.newest && req.body.newest > 0) {
+      query.limit(req.body.newest).sort({ _id: -1 });
+    }
     query
       .select("_id title preview category")
       .populate({ path: "trainer_id", select: "_id profileImage" })
@@ -18,7 +21,6 @@ var functions = {
             error: err,
           });
         } else {
-          // console.log("trainings", trainings);
           return res.json({
             success: true,
             result: trainings,
