@@ -8,7 +8,7 @@ var functions = {
     if (req.body.ids && req.body.ids.length > 0)
       query.where("_id").in(req.body.ids);
     if (req.body.newest && req.body.newest > 0) {
-      query.limit(req.body.newest).sort({ _id: -1 });
+      query.limit(req.body.newest).sort({ _id: 1 });
     }
     query
       .select("_id title preview category")
