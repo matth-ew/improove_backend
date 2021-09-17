@@ -16,7 +16,8 @@ const TrainingsSchema = new Schema(
 );
 
 TrainingsSchema.virtual("exercises_length").get(function () {
-  return this.exercises.length;
+  if (!this.exercises) return 0;
+  else return this.exercises.length;
 });
 
 TrainingsSchema.pre("save", function (next) {
