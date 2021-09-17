@@ -11,7 +11,7 @@ var functions = {
       query.limit(req.body.newest).sort({ _id: 1 });
     }
     query
-      .select("_id title preview category")
+      .select("_id title preview category exercises_length exercises.niente")
       .populate({ path: "trainer_id", select: "_id profileImage" })
       .exec((err, trainings) => {
         if (err) {
@@ -23,7 +23,11 @@ var functions = {
         } else {
           return res.json({
             success: true,
-            result: trainings,
+            result: trainings.map((x) => {
+              var x_obj = x.toObject();
+              delete x_obj.exercises;
+              return x_obj;
+            }),
           });
         }
       });

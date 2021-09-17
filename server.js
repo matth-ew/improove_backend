@@ -53,12 +53,14 @@ myPassport(passport);
 // app.get("/", function (req, res) {
 //   res.sendFile(path.join(__dirname, "/index.html"));
 // });
-app.get("/privacy", function (req, res) {
-  res.sendFile(path.join(__dirname, "www/privacy.html"));
-});
-app.get("/terms", function (req, res) {
-  res.sendFile(path.join(__dirname, "www/terms.html"));
-});
+// app.get("/privacy", function (req, res) {
+//   res.sendFile(path.join(__dirname, "www/privacy.html"));
+// });
+// app.get("/terms", function (req, res) {
+//   res.sendFile(path.join(__dirname, "www/terms.html"));
+// });
+
+app.get("/*", express.static("www"));
 
 // if (nodeEnv === "development") {
 //   router.use(logger("dev"));

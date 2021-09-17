@@ -12,8 +12,12 @@ const TrainingsSchema = new Schema(
     category: { type: String, default: "" },
     exercises: [ExerciseSchema],
   },
-  { timestamps: true }
+  { timestamps: true, toObject: { virtuals: true }, toJSON: { virtuals: true } }
 );
+
+TrainingsSchema.virtual("exercises_length").get(function () {
+  return this.exercises.length;
+});
 
 TrainingsSchema.pre("save", function (next) {
   var doc = this;
