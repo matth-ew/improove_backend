@@ -60,6 +60,14 @@ myPassport(passport);
 //   res.sendFile(path.join(__dirname, "www/terms.html"));
 // });
 
+app.use(function (req, res, next) {
+  res.setHeader(
+    "Content-Security-Policy",
+    "script-src 'self' https://youtube.com"
+  );
+  return next();
+});
+
 app.get("/*", express.static("www"));
 
 // if (nodeEnv === "development") {
