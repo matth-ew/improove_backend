@@ -80,6 +80,7 @@ router.post(
   actionsUser.changeTrainerImage
 );
 router.post("/userAddSavedTraining", loggedIn, actionsUser.saveTraining);
+router.post("/userSendFeedback", loggedIn, actionsUser.sendFeedback);
 router.post("/userDeleteSavedTraining", loggedIn, actionsUser.removeTraining);
 
 export default router;

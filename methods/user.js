@@ -1,4 +1,4 @@
-import { User, Training } from "../models";
+import { User, Training, Feedback } from "../models";
 import { saveImageToS3, deleteFromS3 } from "./utils";
 import { bucket_user } from "../config/config";
 import async from "async";
@@ -103,6 +103,21 @@ var functions = {
         }
       }
     );
+  },
+  sendFeedback: function (req, res) {
+    var feedback = new Feedback();
+    feedback.user_id = req.user.id;
+    feedback.text = req.body.text;
+    feedback.save(function (err, feedback) {
+      if (err) {
+        res.json({ success: false, msg: "Failed to save" });
+      } else {
+        res.json({
+          success: true,
+          msg: "Successfully saved",
+        });
+      }
+    });
   },
   saveTraining: function (req, res) {
     let query = User.updateOne(
