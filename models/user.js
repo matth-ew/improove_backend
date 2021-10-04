@@ -12,6 +12,8 @@ const UsersSchema = new Schema(
     surname: { type: String, default: "" },
     password: { type: String, default: "", select: false },
     testPass: { type: String, select: false },
+    active: { type: Boolean, default: false },
+    verifyKey: { type: String, default: "", select: false },
     terms: { type: Boolean, default: true },
     marketing: { type: Boolean, default: false },
     profileImage: { type: String, default: "" },
@@ -56,7 +58,7 @@ UsersSchema.methods = {
     return bcrypt.hashSync(plainTextPassword, 10);
   },
   compareToken: function (candidateToken, cb) {
-    cb(null, candidateToken === this.verifyKey);
+    cb(null, candidateToken == this.verifyKey);
   },
   issueJWT: function () {
     const payload = {

@@ -1,6 +1,7 @@
 import https from "https";
 import S3 from "aws-sdk/clients/s3";
-import uuid from "uuid"; // generate random strings
+import SES from "aws-sdk/clients/ses";
+import { v4 as uuidv4 } from "uuid";
 import { s3AccessId, s3SecretKey } from "../config/config";
 import passport from "passport";
 import sharp from "sharp";
@@ -11,6 +12,31 @@ var s3 = new S3({
   region: "eu-west-1",
 });
 
+var ses = new SES({
+  accessKeyId: s3AccessId,
+  secretAccessKey: s3SecretKey,
+  region: "eu-west-1",
+  apiVersion: "2010-12-01",
+});
+
+export function sendActivationMail({ to_mail, token }, callback) {
+  var promise = ses
+    .sendTemplatedEmail({
+      Source: "Improove <info@improove.fit>" /* required */,
+      Destination: {
+        ToAddresses: [to_mail],
+      },
+      ConfigurationSetName: "TransactionalMailConfigSet",
+      Template: "ImprooveVerification" /* required */,
+      TemplateData: '{ "token":"' + token + '"}',
+    })
+    .promise();
+
+  promise
+    .then((res) => callback(res, null))
+    .catch((err) => callback(null, err));
+}
+
 export function saveImageToS3(file, { bucket, key, type }, callback) {
   if (file) {
     sharp(file)
@@ -19,7 +45,7 @@ export function saveImageToS3(file, { bucket, key, type }, callback) {
       .then((data) => {
         const params = {
           Bucket: bucket,
-          Key: key + "-" + uuid() + ".webp",
+          Key: key + "-" + uuidv4() + ".webp",
           Body: data,
           ACL: "public-read",
           CacheControl: "max-age=31536000",
@@ -43,7 +69,7 @@ export function saveUrlImageToS3(url, { bucket, key, type }, callback) {
       response.on("error", callback);
       const params = {
         Bucket: bucket,
-        Key: key + "-" + uuid() + "." + type, // type is not required
+        Key: key + "-" + uuidv4() + "." + type, // type is not required
         Body: response,
         ACL: "public-read",
         CacheControl: "max-age=31536000",

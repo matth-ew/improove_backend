@@ -21,6 +21,8 @@ router.get("/", (req, res) => {
 });
 
 router.post("/adduser", actions.addNew);
+router.post("/verifyuser", loggedIn, actions.verifyUser);
+router.post("/resendverification", loggedIn, actions.resendVerification);
 router.post("/authenticate", actions.authenticate);
 router.post("/authenticate-facebook", function (req, res, next) {
   passport.authenticate("facebook-token", function (err, user, profile) {

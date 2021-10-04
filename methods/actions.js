@@ -1,40 +1,124 @@
 import { User } from "../models";
-import { saveUrlImageToS3 } from "./utils";
+import { sendActivationMail, saveUrlImageToS3 } from "./utils";
 import { bucket_user, androidPackageId } from "../config/config";
+import { randomInt } from "crypto";
 
 var functions = {
   addNew: function (req, res) {
     if (!req.body.email || !req.body.password) {
       res.status(401).json({ success: false, msg: "Enter all fields" });
     } else {
-      User.findOne({ email: req.body.email }, function (err, user) {
-        if (user || err) {
-          res.status(401).json({ success: false, msg: "Email already in use" });
-        } else {
-          var newUser = User({
-            email: req.body.email,
-            password: req.body.password,
-          });
-          newUser.save(function (err, user) {
-            if (err) {
-              res.json({ success: false, msg: "Failed to save" });
-            } else {
-              const jwt = user.issueJWT();
-              res.json({
-                success: true,
-                user: user,
-                token: jwt.token,
-                expiresIn: jwt.expiresIn,
-                msg: "Successfully saved",
-              });
-            }
-          });
+      User.findOne(
+        { email: req.body.email.toLowerCase() },
+        function (err, user) {
+          if (user || err) {
+            res
+              .status(401)
+              .json({ success: false, msg: "Email already in use" });
+          } else {
+            let verifyKey = randomInt(10000, 100000);
+            var newUser = User({
+              email: req.body.email.toLowerCase(),
+              password: req.body.password,
+              active: false,
+              verifyKey: verifyKey,
+            });
+            newUser.save(function (err, user) {
+              if (err) {
+                res.json({ success: false, msg: "Failed to save" });
+              } else {
+                sendActivationMail(
+                  {
+                    to_mail: user.email,
+                    // name: user.name,
+                    token: verifyKey,
+                  },
+                  (/*res, err*/) => {}
+                );
+                const jwt = user.issueJWT();
+                res.json({
+                  success: true,
+                  user: user,
+                  token: jwt.token,
+                  expiresIn: jwt.expiresIn,
+                  msg: "Successfully saved",
+                });
+              }
+            });
+          }
         }
-      });
+      );
     }
   },
+  verifyUser: function (req, res) {
+    User.findOne({ _id: req.user._id })
+      .select("+verifyKey")
+      .exec((err, user) => {
+        user.compareToken(req.body.verifyToken, (err, isMatch) => {
+          if (isMatch) {
+            console.log("match");
+            user.active = true;
+            user.save();
+            res.json({ success: true });
+          } else res.json({ success: false, msg: "invalid code" });
+        });
+      });
+  },
+  resendVerification: function (req, res) {
+    async.waterfall(
+      [
+        function (done) {
+          let verifyKey = randomInt(10000, 100000);
+          let query = User.updateOne(
+            { _id: req.user._id },
+            {
+              $set: {
+                verifyKey: verifyKey,
+              },
+            }
+          );
+          query.exec((err /*, mongo_res*/) => {
+            done(err, verifyKey);
+            // if (err)
+            //   return res.json({
+            //     success: false,
+            //     error: err,
+            //     msg: "Failed to save",
+            //   });
+            // else {
+            //   //TODO: MAIL WITH CODE
+            //   console.log("UE VERIFY", verifyKey);
+
+            //   return res.json({ success: true });
+            // }
+          });
+        },
+        function (verifyKey, done) {
+          sendActivationMail(
+            {
+              to_mail: req.user.email,
+              // name: req.user.name,
+              token: verifyKey,
+            },
+            (res, err) => done(err, "done")
+          );
+        },
+      ],
+      function (err) {
+        if (err)
+          return res.json({
+            success: false,
+            error: err,
+          });
+        else
+          return res.json({
+            success: true,
+          });
+      }
+    );
+  },
   authenticate: function (req, res, next) {
-    User.findOne({ email: req.body.email })
+    User.findOne({ email: req.body.email.toLowerCase() })
       .select("+password")
       .exec((err, user) => {
         if (err) next(err);
