@@ -8,8 +8,9 @@ var functions = {
     if (req.body.ids && req.body.ids.length > 0)
       query.where("_id").in(req.body.ids);
     if (req.body.newest && req.body.newest > 0) {
-      query.limit(req.body.newest).sort({ _id: 1 });
+      query.limit(req.body.newest);
     }
+    query.sort({ _id: -1 });
     query
       .select("_id title preview category exercises_length exercises.niente")
       .populate({ path: "trainer_id", select: "_id profileImage" })

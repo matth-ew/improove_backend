@@ -125,11 +125,11 @@ var functions = {
         if (!user)
           res.status(401).send({
             success: false,
-            msg: "Authentication Failed, User not found",
+            msg: "Authentication Failed, account not found",
           });
         else {
           user.comparePassword(req.body.password, function (err, isMatch) {
-            if (isMatch && !err) {
+            if (isMatch && !err && req.body.password.length > 0) {
               const jwt = user.issueJWT();
               res.status(200).json({
                 success: true,
@@ -138,9 +138,19 @@ var functions = {
                 expiresIn: jwt.expiresIn,
               });
             } else {
+              let msg = "";
+              if (user.googleId) {
+                msg = "Authentication failed, try with Google Login";
+              } else if (user.appleId) {
+                msg = "Authentication failed, try with Apple Login";
+              } else if (user.facebookId) {
+                msg = "Authentication failed, try with Facebook Login";
+              } else {
+                msg = "Authentication failed, wrong password";
+              }
               res.status(403).send({
                 success: false,
-                msg: "Authentication failed, wrong password",
+                msg: msg,
               });
             }
           });
