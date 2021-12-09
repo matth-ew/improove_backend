@@ -94,3 +94,16 @@ export function loggedIn(req, res, next) {
       });
   })(req, res, next);
 }
+
+export function loggedInSubscribed(req, res, next) {
+  passport.authenticate("jwt", function (err, user) {
+    if (user && user.subscribed) {
+      req.user = user;
+      next();
+    } else
+      return res.status(401).json({
+        success: false,
+        msg: "Not authorized",
+      });
+  })(req, res, next);
+}

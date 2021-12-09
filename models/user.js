@@ -13,6 +13,7 @@ const UsersSchema = new Schema(
     password: { type: String, default: "", select: false },
     testPass: { type: String, select: false },
     active: { type: Boolean, default: false },
+    subscribed: { type: Boolean, default: false },
     verifyKey: { type: String, default: "", select: false },
     terms: { type: Boolean, default: true },
     marketing: { type: Boolean, default: false },
