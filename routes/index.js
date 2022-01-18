@@ -2,6 +2,7 @@ import express from "express";
 import actions from "../methods/actions";
 import actionsTraining from "../methods/training";
 import actionsUser from "../methods/user";
+import actionsPayment from "../methods/payment";
 import { loggedIn, loggedInSubscribed } from "../methods/utils";
 import passport from "passport";
 import multer from "multer";
@@ -44,6 +45,12 @@ router.post("/authenticate-apple", function (req, res, next) {
     actions.authenticateApple(req, res, user, profile);
   })(req, res, next);
 });
+
+router.post(
+  "/validateSubscription",
+  loggedIn,
+  actionsPayment.validateSubscription
+);
 
 router.post("/getTrainings", actionsTraining.getTrainings);
 router.post("/getTrainingById", loggedIn, actionsTraining.getTrainingById);

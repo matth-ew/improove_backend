@@ -14,6 +14,7 @@ export const appleId = env.APPLE_ID;
 export const appleSecret = env.APPLE_SECRET;
 export const appleBundleId = env.APPLE_BUNDLE_ID || "fit.improove.app";
 export const appleServiceId = env.APPLE_SERVICE_ID || "fit.improove";
+export const appleStoreSharedSecret = env.APPLE_STORE_SHARED_SECRET;
 export const s3AccessId = process.env.S3_ID;
 export const s3SecretKey = process.env.S3_SECRET;
 export const bucket_user = process.env.BUCKET_USER || "improove-user-media";
