@@ -25,6 +25,7 @@ const UsersSchema = new Schema(
     gender: { type: String, default: "" },
     savedTrainings: { type: [SavedTrainingsSchema], default: [] },
     closedTrainings: { type: [ClosedTrainingsSchema], default: [] },
+    // closedGoals: { type: [ClosedGoalsSchema], default: [] },
     googleId: String,
     appleId: String,
     facebookId: String,
@@ -46,6 +47,13 @@ const ClosedTrainingsSchema = new Schema(
   },
   { _id: false }
 );
+// const ClosedGoalsSchema = new Schema(
+//   {
+//     trainingId: { type: Number, ref: "Trainings" },
+//     goals: [{ type: mongoose.ObjectId, ref: "Goals" }],
+//   },
+//   { _id: false }
+// );
 
 UsersSchema.methods = {
   comparePassword: function (candidatePassword, cb) {
