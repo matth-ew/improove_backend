@@ -107,6 +107,32 @@ var functions = {
       else return res.json({ success: true });
     });
   },
+  setExerciseDescription: function (req, res) {
+    let query = Training.updateOne(
+      {
+        _id: req.body.id,
+        trainer_id: req.user._id,
+        exercises: {
+          $elemMatch: {
+            title: req.body.title,
+          },
+        },
+      },
+      {
+        $set: {
+          "exercises.$.description": req.body.description,
+        },
+      }
+    );
+    query.exec((err /*, mongo_res*/) => {
+      if (err)
+        return res.json({
+          success: false,
+          error: err,
+        });
+      else return res.json({ success: true });
+    });
+  },
   setExerciseMistakes: function (req, res) {
     let query = Training.updateOne(
       {

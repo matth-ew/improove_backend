@@ -65,6 +65,11 @@ router.post(
   loggedIn,
   actionsTraining.setTrainingDescription
 );
+router.post(
+  "/setExerciseDescription",
+  loggedIn,
+  actionsTraining.setExerciseDescription
+);
 router.post("/setExerciseTips", loggedIn, actionsTraining.setExerciseTips);
 router.post("/setExerciseHow", loggedIn, actionsTraining.setExerciseHow);
 router.post(

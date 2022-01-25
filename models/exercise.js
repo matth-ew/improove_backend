@@ -7,9 +7,9 @@ const ExerciseSchema = new Schema({
   description: { type: String, default: "" },
   preview: { type: String, default: "" },
   title: { type: String, default: "" },
-  tips: { type: String, default: "" },
-  mistakes: { type: String, default: "" },
-  how: { type: String, default: "" },
+  tips: { type: [String], default: [] },
+  mistakes: { type: [String], default: [] },
+  how: { type: [String], default: [] },
   goal: { type: String, default: "" },
 });
 
