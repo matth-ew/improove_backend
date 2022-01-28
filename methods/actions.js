@@ -2,6 +2,7 @@ import { User } from "../models";
 import { sendActivationMail, saveUrlImageToS3 } from "./utils";
 import { bucket_user, androidPackageId } from "../config/config";
 import { randomInt } from "crypto";
+import async from "async";
 
 var functions = {
   addNew: function (req, res) {

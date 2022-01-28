@@ -1,4 +1,5 @@
 // import { PurchaseHandler } from "./purchase-handler";
+import { Purchase, User } from "../models";
 import { productDataMap } from "../config/products";
 import * as appleReceiptVerify from "node-apple-receipt-verify";
 import { appleStoreSharedSecret } from "../config/config";
@@ -6,6 +7,7 @@ import { appleStoreSharedSecret } from "../config/config";
 // import * as Functions from "firebase-functions";
 // import camelCaseKeys from "camelcase-keys";
 import { groupBy } from "lodash";
+import async from "async";
 
 // // Add typings for missing property in library interface.
 // declare module "node-apple-receipt-verify" {
@@ -25,174 +27,325 @@ export class ApplePurchaseHandler {
       environment: ["sandbox"], // Optional, defaults to ['production'],
       excludeOldTransactions: true,
     });
+
+    this.handleNonSubscription = this.handleNonSubscription.bind(this);
+    this.handleSubscription = this.handleSubscription.bind(this);
+    this.handleServerEvent = this.handleServerEvent.bind(this);
   }
 
-  async handleNonSubscription(userId, productData, token) {
-    return this.handleValidation(userId, token);
+  async setUserSubscription(user_id, status) {
+    if (status == "ACTIVE" || status == "EXPIRED") {
+      return await User.updateOne(
+        { _id: user_id },
+        {
+          subscribed: status == "ACTIVE" ? true : false,
+        }
+      );
+    } else return;
   }
 
-  async handleSubscription(userId, productData, token) {
-    return this.handleValidation(userId, token);
+  async handleNonSubscription(user_id, productData, token, callback) {
+    return this.handleValidation(user_id, token, callback);
   }
 
-  async handleValidation(userId, token) {
+  async handleSubscription(user_id, productData, token, callback) {
+    return this.handleValidation(user_id, token, callback);
+  }
+
+  async handleValidation(user_id, token, callback) {
     // Validate receipt and fetch the products
-    let products;
-    try {
-      products = await appleReceiptVerify.validate({ receipt: token });
-    } catch (e) {
-      if (e instanceof appleReceiptVerify.EmptyError) {
-        // Receipt is valid but it is now empty.
-        console.warn("Received valid empty receipt");
-        return true;
-      } else if (e instanceof appleReceiptVerify.ServiceUnavailableError) {
-        console.warn("App store is currently unavailable, could not validate");
-        // Handle app store services not being available
-        return false;
+    // try {
+    //   products = await appleReceiptVerify.validate({ receipt: token });
+    // } catch (e) {
+    //   if (e instanceof appleReceiptVerify.EmptyError) {
+    //     // Receipt is valid but it is now empty.
+    //     console.warn("Received valid empty receipt");
+    //     callback(true);
+    //   } else if (e instanceof appleReceiptVerify.ServiceUnavailableError) {
+    //     console.warn("App store is currently unavailable, could not validate");
+    //     // Handle app store services not being available
+    //     callback(false);
+    //   }
+    //   callback(false);
+    // }
+
+    let expirationStatus = "";
+
+    var self = this;
+    async.waterfall(
+      [
+        function (done) {
+          appleReceiptVerify.validate({ receipt: token }, (err, products) => {
+            done(err, products);
+          });
+        },
+        function (products, done) {
+          async.each(
+            products,
+            (product, eachDone) => {
+              const productData = productDataMap[product.productId];
+              if (!productData) eachDone(null);
+              // Process the product
+              let purchaseData;
+              switch (productData.type) {
+                case "SUBSCRIPTION":
+                  purchaseData = {
+                    type: productData.type,
+                    iapSource: "app_store",
+                    orderId: product.originalTransactionId,
+                    productId: product.productId,
+                    user_id: user_id,
+                    purchaseDate: product.purchaseDate,
+                    expirationDate: product.expirationDate ?? 0,
+                    status:
+                      (product.expirationDate ?? 0) <= Date.now()
+                        ? "EXPIRED"
+                        : "ACTIVE",
+                  };
+                  if (purchaseData.status == "ACTIVE") {
+                    expirationStatus = purchaseData.status;
+                  } else if (expirationStatus == "") {
+                    expirationStatus = purchaseData.status;
+                  }
+                  Purchase.updateOne(
+                    { orderId: purchaseData.orderId },
+                    { ...purchaseData, user_id: user_id },
+                    { upsert: true },
+                    (err) => {
+                      eachDone(err);
+                    }
+                  );
+                  break;
+                case "NON_SUBSCRIPTION":
+                  purchaseData = {
+                    type: productData.type,
+                    iapSource: "app_store",
+                    orderId: product.originalTransactionId,
+                    productId: product.productId,
+                    user_id: user_id,
+                    purchaseDate: product.purchaseDate,
+                    status: "COMPLETED",
+                  };
+                  Purchase.updateOne(
+                    { orderId: purchaseData.orderId },
+                    { ...purchaseData, user_id: user_id },
+                    { upsert: true },
+                    (err) => {
+                      eachDone(err);
+                    }
+                  );
+                  break;
+              }
+            },
+            function (err) {
+              done(err);
+            }
+          );
+        },
+        function (done) {
+          self.setUserSubscription(user_id, expirationStatus, done);
+        },
+      ],
+      function (err) {
+        if (err) {
+          if (e instanceof appleReceiptVerify.EmptyError) {
+            // Receipt is valid but it is now empty.
+            console.warn("Received valid empty receipt");
+            callback(false);
+          } else if (e instanceof appleReceiptVerify.ServiceUnavailableError) {
+            console.warn(
+              "App store is currently unavailable, could not validate"
+            );
+            // Handle app store services not being available
+            callback(false);
+          }
+          callback(false);
+        } else callback(true);
       }
-      return false;
-    }
-    // Process the received products
-    for (const product of products) {
-      // Skip processing the product if it is unknown
-      const productData = productDataMap[product.productId];
-      if (!productData) continue;
-      // Process the product
-      let purchaseData;
-      switch (productData.type) {
-        case "SUBSCRIPTION":
-          purchaseData = {
-            type: productData.type,
-            iapSource: "app_store",
-            orderId: product.originalTransactionId,
-            productId: product.productId,
-            userId,
-            purchaseDate: product.purchaseDate,
-            expiryDate: product.expirationDate ?? 0,
-            status:
-              (product.expirationDate ?? 0) <= Date.now()
-                ? "EXPIRED"
-                : "ACTIVE",
-          };
-          // await this.iapRepository.createOrUpdatePurchase({
-          // type: productData.type,
-          // iapSource: "app_store",
-          // orderId: product.originalTransactionId,
-          // productId: product.productId,
-          // userId,
-          // purchaseDate: product.purchaseDate,
-          // expiryDate:
-          //   product.expirationDate ?? 0,
-          // status:
-          //   (product.expirationDate ?? 0) <= Date.now()
-          //     ? "EXPIRED"
-          //     : "ACTIVE",
-          // });
-          break;
-        case "NON_SUBSCRIPTION":
-          purchaseData = {
-            type: productData.type,
-            iapSource: "app_store",
-            orderId: product.originalTransactionId,
-            productId: product.productId,
-            userId,
-            purchaseDate: product.purchaseDate,
-            status: "COMPLETED",
-          };
-          // await this.iapRepository.createOrUpdatePurchase({
-          //   type: productData.type,
-          //   iapSource: "app_store",
-          //   orderId: product.originalTransactionId,
-          //   productId: product.productId,
-          //   userId,
-          //   purchaseDate: product.purchaseDate,
-          //   status: "COMPLETED",
-          // });
-          break;
-      }
-    }
-    return purchaseData;
+    );
+    // // Process the received products
+    // for (const product of products) {
+    //   // Skip processing the product if it is unknown
+    //   const productData = productDataMap[product.productId];
+    //   if (!productData) continue;
+    //   // Process the product
+    //   let purchaseData;
+    //   switch (productData.type) {
+    //     case "SUBSCRIPTION":
+    //       purchaseData = {
+    //         type: productData.type,
+    //         iapSource: "app_store",
+    //         orderId: product.originalTransactionId,
+    //         productId: product.productId,
+    //         user_id: user_id,
+    //         purchaseDate: product.purchaseDate,
+    //         expirationDate: product.expirationDate ?? 0,
+    //         status:
+    //           (product.expirationDate ?? 0) <= Date.now()
+    //             ? "EXPIRED"
+    //             : "ACTIVE",
+    //       };
+    //       if (purchaseData.status == "ACTIVE") {
+    //         expirationStatus = purchaseData.status;
+    //       } else if (expirationStatus == "") {
+    //         expirationStatus = purchaseData.status;
+    //       }
+    //       await Purchase.updateOne(
+    //         { orderId: purchaseData.orderId },
+    //         { ...purchaseData, user_id: user_id },
+    //         { upsert: true }
+    //       );
+    //       // await this.iapRepository.createOrUpdatePurchase({
+    //       // type: productData.type,
+    //       // iapSource: "app_store",
+    //       // orderId: product.originalTransactionId,
+    //       // productId: product.productId,
+    //       // user_id,
+    //       // purchaseDate: product.purchaseDate,
+    //       // expirationDate:
+    //       //   product.expirationDate ?? 0,
+    //       // status:
+    //       //   (product.expirationDate ?? 0) <= Date.now()
+    //       //     ? "EXPIRED"
+    //       //     : "ACTIVE",
+    //       // });
+    //       break;
+    //     case "NON_SUBSCRIPTION":
+    //       purchaseData = {
+    //         type: productData.type,
+    //         iapSource: "app_store",
+    //         orderId: product.originalTransactionId,
+    //         productId: product.productId,
+    //         user_id: user_id,
+    //         purchaseDate: product.purchaseDate,
+    //         status: "COMPLETED",
+    //       };
+    //       Purchase.updateOne(
+    //         { orderId: purchaseData.orderId },
+    //         { ...purchaseData, user_id: user_id },
+    //         { upsert: true }
+    //       );
+    //       // await this.iapRepository.createOrUpdatePurchase({
+    //       //   type: productData.type,
+    //       //   iapSource: "app_store",
+    //       //   orderId: product.originalTransactionId,
+    //       //   productId: product.productId,
+    //       //   user_id,
+    //       //   purchaseDate: product.purchaseDate,
+    //       //   status: "COMPLETED",
+    //       // });
+    //       break;
+    //   }
+    // }
+    // this.setUserSubscription(user_id, expirationStatus);
+    // return true;
   }
 
-  //   handleServerEvent = functions.https.onRequest(async (req, res) => {
-  //     // eslint-disable-next-line @typescript-eslint/no-var-requires
-  //     // type ReceiptInfo = {
-  //     //   productId: string;
-  //     //   expiresDateMs: string;
-  //     //   originalTransactionId: string;
-  //     // };
-  //     // const eventData: {
-  //     //   notificationType: "CANCEL" | "DID_CHANGE_RENEWAL_PREF" | "DID_CHANGE_RENEWAL_STATUS" | "DID_FAIL_TO_RENEW" | "DID_RECOVER" | "DID_RENEW" | "INITIAL_BUY" | "INTERACTIVE_RENEWAL" | "PRICE_INCREASE_CONSENT" | "REFUND" | "REVOKE";
-  //     //   password: string;
-  //     //   environment: "Sandbox" | "PROD",
-  //     //   unifiedReceipt: {
-  //     //     "environment": "Sandbox" | "Production",
-  //     //     latestReceiptInfo: Array<ReceiptInfo>,
-  //     //   };
-  //     // } = camelCaseKeys(req.body, {deep: true});
-  //     const eventData = camelCaseKeys(req.body, { deep: true });
-  //     // Decline events where the password does not match the shared secret
-  //     if (eventData.password !== appleStoreSharedSecret) {
-  //       res.sendStatus(403);
-  //       return;
-  //     }
-  //     // Only process events where expiration changes are likely to occur
-  //     if (
-  //       ![
-  //         "CANCEL",
-  //         "DID_RENEW",
-  //         "DID_FAIL_TO_RENEW",
-  //         "DID_CHANGE_RENEWAL_STATUS",
-  //         "INITIAL_BUY",
-  //         "INTERACTIVE_RENEWAL",
-  //         "REFUND",
-  //         "REVOKE",
-  //       ].includes(eventData.notificationType)
-  //     ) {
-  //       res.sendStatus(200);
-  //       return;
-  //     }
-  //     // Find latest receipt for each original transaction
-  //     const latestReceipts = Object.values(
-  //       groupBy(
-  //         eventData.unifiedReceipt.latestReceiptInfo,
-  //         "originalTransactionId"
-  //       )
-  //     ).map((group) =>
-  //       group.reduce((acc, e) =>
-  //         !acc || e.expiresDateMs >= acc.expiresDateMs ? e : acc
-  //       )
-  //     );
-  //     // Process receipt items
-  //     for (const iap of latestReceipts) {
-  //       const productData = productDataMap[iap.productId];
-  //       // Skip products that are unknown
-  //       if (!productData) continue;
-  //       // Update products in firestore
-  //       switch (productData.type) {
-  //         case "SUBSCRIPTION":
-  //           try {
-  //             // await this.iapRepository.updatePurchase({
-  //             //   iapSource: "app_store",
-  //             //   orderId: iap.originalTransactionId,
-  //             //   expiryDate: parseInt(iap.expiresDateMs, 10),
-  //             //   status:
-  //             //     Date.now() >= parseInt(iap.expiresDateMs, 10)
-  //             //       ? "EXPIRED"
-  //             //       : "ACTIVE",
-  //             // });
-  //           } catch (e) {
-  //             console.log("Could not patch purchase", {
-  //               originalTransactionId: iap.originalTransactionId,
-  //               productId: iap.productId,
-  //             });
-  //           }
-  //           break;
-  //         case "NON_SUBSCRIPTION":
-  //           // Nothing to update yet about non-subscription purchases
-  //           break;
-  //       }
-  //     }
-  //     res.status(200).send();
-  //   });
+  async handleServerEvent(req, res) {
+    const eventData = camelCaseKeys(req.body, { deep: true });
+    // Decline events where the password does not match the shared secret
+    if (eventData.password !== appleStoreSharedSecret) {
+      return 403;
+    }
+    // Only process events where expiration changes are likely to occur
+    if (
+      ![
+        "CANCEL",
+        "DID_RENEW",
+        "DID_FAIL_TO_RENEW",
+        "DID_CHANGE_RENEWAL_STATUS",
+        "INITIAL_BUY",
+        "INTERACTIVE_RENEWAL",
+        "REFUND",
+        "REVOKE",
+      ].includes(eventData.notificationType)
+    ) {
+      return 200;
+    }
+    // Find latest receipt for each original transaction
+    const latestReceipts = Object.values(
+      groupBy(
+        eventData.unifiedReceipt.latestReceiptInfo,
+        "originalTransactionId"
+      )
+    ).map((group) =>
+      group.reduce((acc, e) =>
+        !acc || e.expiresDateMs >= acc.expiresDateMs ? e : acc
+      )
+    );
+
+    // Process receipt items
+    let expirationMap = Map();
+    const promises = [];
+    for (const iap of latestReceipts) {
+      const productData = productDataMap[iap.productId];
+      // Skip products that are unknown
+      if (!productData) continue;
+      // Update products in firestore
+
+      const promise = new Promise((resolve) => {
+        switch (productData.type) {
+          case "SUBSCRIPTION":
+            try {
+              let purchaseData = {
+                iapSource: "app_store",
+                orderId: iap.originalTransactionId,
+                expirationDate: parseInt(iap.expiresDateMs, 10),
+                status:
+                  Date.now() >= parseInt(iap.expiresDateMs, 10)
+                    ? "EXPIRED"
+                    : "ACTIVE",
+              };
+              const query = Purchase.findOneAndUpdate(
+                { orderId: purchaseData.orderId },
+                {
+                  iapSource: purchaseData.iapSource,
+                  orderId: purchaseData.orderId,
+                  expirationDate: purchaseData.expirationDate,
+                  status: purchaseData.status,
+                }
+              );
+              query.exec(async (err, purchase) => {
+                if (err || !purchase) {
+                  resolve();
+                } else {
+                  resolve({
+                    user_id: purchase.user_id,
+                    status: purchase.status,
+                  });
+                }
+              });
+            } catch (e) {
+              console.log("Could not patch purchase", {
+                originalTransactionId: iap.originalTransactionId,
+                productId: iap.productId,
+              });
+            }
+            break;
+          case "NON_SUBSCRIPTION":
+            // Nothing to update yet about non-subscription purchases
+            break;
+        }
+        promises.push(promise);
+      });
+    }
+    Promise.all(promises).then((values) => {
+      for (const v of values) {
+        if (!v) continue;
+        if (!expirationMap.has(v.user_id)) {
+          expirationMap[v.user_id] = v.status;
+        } else if (v.status == "ACTIVE") {
+          expirationMap[v.user_id] = v.status;
+        }
+      }
+
+      Promise.all(
+        Array.from(expirationMap).map(async ([user_id, status]) => {
+          this.setUserSubscription(user_id, status);
+        })
+      ).then(() => {
+        return 200;
+      });
+    });
+  }
 }

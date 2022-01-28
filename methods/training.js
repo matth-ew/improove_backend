@@ -43,12 +43,12 @@ var functions = {
   },
   getTrainingById: function (req, res) {
     try {
-      let query = Training.findOne().where("_id").equals(req.body.id);
+      let query = Training.findOne().where("_id").equals(parseInt(req.body.id));
       query.select(" +exercises.video ");
       query
         .populate({ path: "trainer_id", select: "_id profileImage" })
         .exec((err, training) => {
-          if (err) {
+          if (err || !training) {
             console.log("error in load training by id", err);
             return res.json({
               success: false,
@@ -65,8 +65,11 @@ var functions = {
                 subscribed: req.user.subscribed,
               });
             } else {
-              let exercises = training.toObject().exercises.map((e) => {
-                return { ...e, video: "", how: "", tips: "", mistakes: "" };
+              const training_o = training.toObject();
+              let exercises = training_o.exercises.map((e, i) => {
+                if (i < training_o.freeExercises) return e;
+                else
+                  return { ...e, video: "", how: [], tips: [], mistakes: [] };
                 // e.video = "";
                 // e.how = "";
                 // e.tips = "";
@@ -75,7 +78,7 @@ var functions = {
               });
               return res.json({
                 success: true,
-                result: { ...training.toObject(), exercises: exercises },
+                result: { ...training_o, exercises: exercises },
                 subscribed: req.user.subscribed,
               });
             }

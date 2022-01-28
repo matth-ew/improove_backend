@@ -2,7 +2,6 @@ import mongoose from "mongoose";
 const Schema = mongoose.Schema;
 
 const ExerciseSchema = new Schema({
-  _id: Schema.ObjectId,
   video: { type: String, default: "", select: false },
   description: { type: String, default: "" },
   preview: { type: String, default: "" },
