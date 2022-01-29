@@ -2,6 +2,7 @@ import express from "express";
 import actions from "../methods/actions";
 import actionsTraining from "../methods/training";
 import actionsUser from "../methods/user";
+import actionsPayment from "../methods/payment";
 import { loggedIn, loggedInSubscribed } from "../methods/utils";
 import passport from "passport";
 import multer from "multer";
@@ -45,6 +46,18 @@ router.post("/authenticate-apple", function (req, res, next) {
   })(req, res, next);
 });
 
+router.post(
+  "/validateSubscription",
+  loggedIn,
+  actionsPayment.validateSubscription
+);
+
+router.post(
+  "/applePaymentEventCallback",
+  // loggedIn,
+  actionsPayment.applePaymentEventCallback
+);
+
 router.post("/getTrainings", actionsTraining.getTrainings);
 router.post("/getTrainingById", loggedIn, actionsTraining.getTrainingById);
 router.post("/getTrainerById", actionsUser.getTrainerById);
@@ -57,6 +70,11 @@ router.post(
   "/setTrainingDescription",
   loggedIn,
   actionsTraining.setTrainingDescription
+);
+router.post(
+  "/setExerciseDescription",
+  loggedIn,
+  actionsTraining.setExerciseDescription
 );
 router.post("/setExerciseTips", loggedIn, actionsTraining.setExerciseTips);
 router.post("/setExerciseHow", loggedIn, actionsTraining.setExerciseHow);

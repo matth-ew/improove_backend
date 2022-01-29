@@ -7,10 +7,15 @@ import cors from "cors";
 import compression from "compression";
 import helmet from "helmet"; // security properties
 import path from "path";
+import actionsPayment from "./methods/payment";
+import credentials from "./config/credentials.json";
+import { GoogleAuth } from "google-auth-library";
 
 import {
   // allowedOrigins,
   apiPort,
+  googleProjectId,
+  googlePlayPubsubBillingTopic,
 } from "./config/config";
 
 import { connectDB } from "./config/db";
@@ -50,15 +55,54 @@ app.use("/api", router);
 app.use(passport.initialize());
 myPassport(passport);
 
-// app.get("/", function (req, res) {
-//   res.sendFile(path.join(__dirname, "/index.html"));
-// });
-// app.get("/privacy", function (req, res) {
-//   res.sendFile(path.join(__dirname, "www/privacy.html"));
-// });
-// app.get("/terms", function (req, res) {
-//   res.sendFile(path.join(__dirname, "www/terms.html"));
-// });
+/* PARTE PUBSUB GOOGLE PAYMENTS */
+
+const { PubSub } = require("@google-cloud/pubsub");
+
+const pubsub = new PubSub({
+  projectId: googleProjectId,
+  auth: new GoogleAuth({
+    credentials,
+  }),
+});
+const subscription = pubsub.subscription(googlePlayPubsubBillingTopic + "-sub");
+subscription.on("message", async (message) => {
+  console.log("UE MESSAGE!");
+  message.ack();
+  try {
+    await actionsPayment.googlePaymentEventCallback(message);
+  } catch (e) {}
+});
+
+// // Receive callbacks for errors on the subscription
+subscription.on("error", (error) => {
+  console.error("Received error:", error);
+});
+
+// (async () => {
+//   try {
+//     console.log("UEUE UAJO");
+//     const [subscription] = await pubsub.createSubscription(
+//       googlePlayPubsubBillingTopic,
+//       googlePlayPubsubBillingTopic + "-sub"
+//     );
+
+//     // Receive callbacks for new messages on the subscription
+//     subscription.on("message", (message) => {
+//       console.log("UE MESSAGE!");
+//       actionsPayment.googlePaymentEventCallback(message);
+//     });
+
+//     // // Receive callbacks for errors on the subscription
+//     subscription.on("error", (error) => {
+//       console.error("Received error:", error);
+//     });
+//   } catch (e) {
+//     // Deal with the fact the chain failed
+//   }
+// })();
+
+/* PARTE SITO STATICO */
 
 app.use(function (req, res, next) {
   res.setHeader(
