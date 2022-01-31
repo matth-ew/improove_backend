@@ -1,11 +1,67 @@
-import { User, Training, Feedback } from "../models";
+import { User, Training, Feedback, Purchase } from "../models";
 import { saveImageToS3, deleteFromS3 } from "./utils";
 import { bucket_user } from "../config/config";
 import async from "async";
 
 var functions = {
   getinfo: function (req, res) {
-    return res.json({ success: true, user: req.user });
+    const { user } = req;
+    if (req.user.subscribed) {
+      async.waterfall(
+        [
+          function (done) {
+            console.log("SUBSCRIBED", user._id);
+            Purchase.findOne({ user_id: user._id, status: "ACTIVE" })
+              .sort({ expirationDate: -1 })
+              .exec((err, purchase) => {
+                done(err, purchase);
+              });
+          },
+          function (purchase, done) {
+            if (purchase) {
+              console.log(
+                "SUBSCRIBED LAST PURCH",
+                purchase,
+                purchase.expirationDate < Date.now()
+              );
+              if (purchase.expirationDate < Date.now()) {
+                Purchase.updateOne(
+                  { _id: purchase._id },
+                  { status: "EXPIRED" }
+                ).exec((err) => done(err, true));
+              } else {
+                done(null, false);
+              }
+            } else {
+              done(null, true);
+            }
+          },
+          function (expired, done) {
+            if (expired) {
+              console.log("SUBSCRIBED EXPIRED?", expired);
+              User.updateOne(
+                { _id: user._id },
+                {
+                  subscribed: false,
+                }
+              ).exec((err) => done(err, true));
+            } else {
+              done(null, expired);
+            }
+          },
+        ],
+        function (err, expired) {
+          if (err) res.json({ success: true, user });
+          else
+            res.json({
+              success: true,
+              user: { ...user.toObject(), subscribed: !expired },
+            });
+        }
+      );
+    } else {
+      return res.json({ success: true, user });
+    }
   },
   changeTrainerImage: function (req, res) {
     console.log("REQ.FILE", req.file);
