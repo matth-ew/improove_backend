@@ -26,7 +26,7 @@ export class ApplePurchaseHandler {
       verbose: false,
       secret: appleStoreSharedSecret,
       extended: true,
-      environment: ["sandbox"], // Optional, defaults to ['production'],
+      environment: ["production", "sandbox"], // Optional, defaults to ['production'],
       excludeOldTransactions: true,
     });
 
