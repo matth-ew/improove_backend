@@ -23,6 +23,7 @@ var functions = {
               password: req.body.password,
               active: false,
               verifyKey: verifyKey,
+              referral: req.body.referral_code,
             });
             newUser.save(function (err, user) {
               if (err) {
@@ -173,6 +174,7 @@ var functions = {
       });
     } else if (profile) {
       let newUser = new User();
+      if (req.body.referral_code) newUser.referral = req.body.referral_code;
       const birthday = profile._json.birthday;
       newUser.facebookId = profile.id;
       newUser.name = profile.name.givenName;
@@ -244,7 +246,7 @@ var functions = {
     } else if (profile) {
       let newUser = new User();
       const { id, name, email } = profile;
-
+      if (req.body.referral_code) newUser.referral = req.body.referral_code;
       //const birthday = profile._json.birthday;
       newUser.appleId = id;
       newUser.name = name ? name.firstName : "";
@@ -310,6 +312,7 @@ var functions = {
         { bucket: bucket_user, key: profile.id, type: "jpeg" },
         (err, response) => {
           let newUser = new User();
+          if (req.body.referral_code) newUser.referral = req.body.referral_code;
           newUser.googleId = profile.id;
           const birthday = profile._json.birthday;
           newUser.name = profile.name.givenName;

@@ -26,6 +26,7 @@ const UsersSchema = new Schema(
     savedTrainings: { type: [SavedTrainingsSchema], default: [] },
     closedTrainings: { type: [ClosedTrainingsSchema], default: [] },
     // closedGoals: { type: [ClosedGoalsSchema], default: [] },
+    referral: String,
     googleId: String,
     appleId: String,
     facebookId: String,
