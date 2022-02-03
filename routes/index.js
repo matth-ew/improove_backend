@@ -59,6 +59,7 @@ router.post(
 );
 
 router.post("/getTrainings", actionsTraining.getTrainings);
+router.post("/getWeekTraining", actionsTraining.getWeekTraining);
 router.post("/getTrainingById", loggedIn, actionsTraining.getTrainingById);
 router.post("/getTrainerById", actionsUser.getTrainerById);
 router.post(

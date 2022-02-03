@@ -1,6 +1,7 @@
-import { Training } from "../models";
+import { Training, General } from "../models";
 import actionsUser from "../methods/user";
 import async from "async";
+import training from "../models/training";
 
 var functions = {
   getTrainings: function (req, res) {
@@ -35,6 +36,54 @@ var functions = {
         });
     } catch (e) {
       console.log("error in load trainings", err);
+      return res.json({
+        success: false,
+        error: e,
+      });
+    }
+  },
+  getWeekTraining: function (req, res) {
+    try {
+      async.waterfall(
+        [
+          function (done) {
+            General.findOne().exec((err, general) => {
+              done(err, general);
+            });
+          },
+          function (general, done) {
+            if (!general) {
+              done("no general");
+            } else {
+              Training.findOne()
+                .where("_id")
+                .equals(general.week_training_id)
+                .select(
+                  "_id title preview category exercises_length exercises.niente"
+                )
+                .populate({ path: "trainer_id", select: "_id profileImage" })
+                .exec((err, training) => {
+                  done(err, training);
+                });
+            }
+          },
+        ],
+        function (err, result) {
+          if (err) {
+            return res.json({
+              success: false,
+              error: err,
+            });
+          } else {
+            return res.json({
+              success: true,
+              training: result,
+            });
+          }
+        }
+      );
+    } catch (e) {
+      console.log("error in load training week", e);
       return res.json({
         success: false,
         error: e,
