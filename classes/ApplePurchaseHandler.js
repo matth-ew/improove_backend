@@ -8,6 +8,8 @@ import { appleStoreSharedSecret } from "../config/config";
 // import camelCaseKeys from "camelcase-keys";
 import { groupBy } from "lodash";
 import async from "async";
+// import jwt from "jsonwebtoken";
+import base64url from "base64url";
 
 // // Add typings for missing property in library interface.
 // declare module "node-apple-receipt-verify" {
@@ -24,7 +26,7 @@ export class ApplePurchaseHandler {
       verbose: false,
       secret: appleStoreSharedSecret,
       extended: true,
-      environment: ["sandbox"], // Optional, defaults to ['production'],
+      environment: ["production", "sandbox"], // Optional, defaults to ['production'],
       excludeOldTransactions: true,
     });
 
@@ -33,15 +35,16 @@ export class ApplePurchaseHandler {
     this.handleServerEvent = this.handleServerEvent.bind(this);
   }
 
-  async setUserSubscription(user_id, status) {
+  async setUserSubscription(user_id, status, callback) {
+    console.log("SET USER STATUS", user_id, status);
     if (status == "ACTIVE" || status == "EXPIRED") {
-      return await User.updateOne(
+      User.updateOne(
         { _id: user_id },
         {
           subscribed: status == "ACTIVE" ? true : false,
         }
-      );
-    } else return;
+      ).exec((err) => callback(err));
+    } else callback(null);
   }
 
   async handleNonSubscription(user_id, productData, token, callback) {
@@ -70,7 +73,7 @@ export class ApplePurchaseHandler {
     // }
 
     let expirationStatus = "";
-
+    // console.log("HANDLE VALIDATION", token);
     var self = this;
     async.waterfall(
       [
@@ -80,6 +83,7 @@ export class ApplePurchaseHandler {
           });
         },
         function (products, done) {
+          // console.log("HANDLE VALIDATION PRODUCTS", products);
           async.each(
             products,
             (product, eachDone) => {
@@ -143,6 +147,7 @@ export class ApplePurchaseHandler {
           );
         },
         function (done) {
+          console.log("HANDLE VALIDATION SET USER", user_id, expirationStatus);
           self.setUserSubscription(user_id, expirationStatus, done);
         },
       ],
@@ -163,189 +168,117 @@ export class ApplePurchaseHandler {
         } else callback(true);
       }
     );
-    // // Process the received products
-    // for (const product of products) {
-    //   // Skip processing the product if it is unknown
-    //   const productData = productDataMap[product.productId];
-    //   if (!productData) continue;
-    //   // Process the product
-    //   let purchaseData;
-    //   switch (productData.type) {
-    //     case "SUBSCRIPTION":
-    //       purchaseData = {
-    //         type: productData.type,
-    //         iapSource: "app_store",
-    //         orderId: product.originalTransactionId,
-    //         productId: product.productId,
-    //         user_id: user_id,
-    //         purchaseDate: product.purchaseDate,
-    //         expirationDate: product.expirationDate ?? 0,
-    //         status:
-    //           (product.expirationDate ?? 0) <= Date.now()
-    //             ? "EXPIRED"
-    //             : "ACTIVE",
-    //       };
-    //       if (purchaseData.status == "ACTIVE") {
-    //         expirationStatus = purchaseData.status;
-    //       } else if (expirationStatus == "") {
-    //         expirationStatus = purchaseData.status;
-    //       }
-    //       await Purchase.updateOne(
-    //         { orderId: purchaseData.orderId },
-    //         { ...purchaseData, user_id: user_id },
-    //         { upsert: true }
-    //       );
-    //       // await this.iapRepository.createOrUpdatePurchase({
-    //       // type: productData.type,
-    //       // iapSource: "app_store",
-    //       // orderId: product.originalTransactionId,
-    //       // productId: product.productId,
-    //       // user_id,
-    //       // purchaseDate: product.purchaseDate,
-    //       // expirationDate:
-    //       //   product.expirationDate ?? 0,
-    //       // status:
-    //       //   (product.expirationDate ?? 0) <= Date.now()
-    //       //     ? "EXPIRED"
-    //       //     : "ACTIVE",
-    //       // });
-    //       break;
-    //     case "NON_SUBSCRIPTION":
-    //       purchaseData = {
-    //         type: productData.type,
-    //         iapSource: "app_store",
-    //         orderId: product.originalTransactionId,
-    //         productId: product.productId,
-    //         user_id: user_id,
-    //         purchaseDate: product.purchaseDate,
-    //         status: "COMPLETED",
-    //       };
-    //       Purchase.updateOne(
-    //         { orderId: purchaseData.orderId },
-    //         { ...purchaseData, user_id: user_id },
-    //         { upsert: true }
-    //       );
-    //       // await this.iapRepository.createOrUpdatePurchase({
-    //       //   type: productData.type,
-    //       //   iapSource: "app_store",
-    //       //   orderId: product.originalTransactionId,
-    //       //   productId: product.productId,
-    //       //   user_id,
-    //       //   purchaseDate: product.purchaseDate,
-    //       //   status: "COMPLETED",
-    //       // });
-    //       break;
-    //   }
-    // }
-    // this.setUserSubscription(user_id, expirationStatus);
-    // return true;
   }
 
   async handleServerEvent(req, res) {
-    const eventData = camelCaseKeys(req.body, { deep: true });
-    // Decline events where the password does not match the shared secret
-    if (eventData.password !== appleStoreSharedSecret) {
-      return 403;
-    }
-    // Only process events where expiration changes are likely to occur
-    if (
-      ![
-        "CANCEL",
-        "DID_RENEW",
-        "DID_FAIL_TO_RENEW",
-        "DID_CHANGE_RENEWAL_STATUS",
-        "INITIAL_BUY",
-        "INTERACTIVE_RENEWAL",
-        "REFUND",
-        "REVOKE",
-      ].includes(eventData.notificationType)
-    ) {
-      return 200;
-    }
-    // Find latest receipt for each original transaction
-    const latestReceipts = Object.values(
-      groupBy(
-        eventData.unifiedReceipt.latestReceiptInfo,
-        "originalTransactionId"
-      )
-    ).map((group) =>
-      group.reduce((acc, e) =>
-        !acc || e.expiresDateMs >= acc.expiresDateMs ? e : acc
-      )
-    );
+    // const eventData = camelCaseKeys(req.body, { deep: true });
+    try {
+      const cryptedEventData = req.body.signedPayload.split(".")[1];
+      const cryptedEventHeader = req.body.signedPayload.split(".")[0];
+      const cryptedEventSignature = req.body.signedPayload.split(".")[2];
+      // const cryptedEventData = req.body.signedPayload;
 
-    // Process receipt items
-    let expirationMap = Map();
-    const promises = [];
-    for (const iap of latestReceipts) {
-      const productData = productDataMap[iap.productId];
-      // Skip products that are unknown
-      if (!productData) continue;
-      // Update products in firestore
+      let eventData = JSON.parse(base64url.decode(cryptedEventData));
+      console.log("APPLE MESSAGE", eventData);
 
-      const promise = new Promise((resolve) => {
-        switch (productData.type) {
-          case "SUBSCRIPTION":
-            try {
-              let purchaseData = {
-                iapSource: "app_store",
-                orderId: iap.originalTransactionId,
-                expirationDate: parseInt(iap.expiresDateMs, 10),
-                status:
-                  Date.now() >= parseInt(iap.expiresDateMs, 10)
-                    ? "EXPIRED"
-                    : "ACTIVE",
-              };
-              const query = Purchase.findOneAndUpdate(
-                { orderId: purchaseData.orderId },
-                {
-                  iapSource: purchaseData.iapSource,
-                  orderId: purchaseData.orderId,
-                  expirationDate: purchaseData.expirationDate,
-                  status: purchaseData.status,
-                }
-              );
-              query.exec(async (err, purchase) => {
-                if (err || !purchase) {
-                  resolve();
-                } else {
-                  resolve({
-                    user_id: purchase.user_id,
-                    status: purchase.status,
-                  });
-                }
-              });
-            } catch (e) {
-              console.log("Could not patch purchase", {
-                originalTransactionId: iap.originalTransactionId,
-                productId: iap.productId,
-              });
-            }
-            break;
-          case "NON_SUBSCRIPTION":
-            // Nothing to update yet about non-subscription purchases
-            break;
-        }
-        promises.push(promise);
-      });
-    }
-    Promise.all(promises).then((values) => {
-      for (const v of values) {
-        if (!v) continue;
-        if (!expirationMap.has(v.user_id)) {
-          expirationMap[v.user_id] = v.status;
-        } else if (v.status == "ACTIVE") {
-          expirationMap[v.user_id] = v.status;
-        }
+      // let eventHeader = base64url.decode(cryptedEventHeader);
+      // console.log("APPLE HEADER", eventHeader);
+
+      // let eventSignature = base64url.decode(cryptedEventSignature);
+      // console.log("APPLE SIGNATURE", eventSignature);
+
+      // var decoded = jwt.verify(eventHeader, appleStoreSharedSecret, {
+      //   algorithms: ["ES256"],
+      // });
+      // console.log("JWT DECODED", decoded);
+
+      // Decline events where the password does not match the shared secret
+
+      // if (eventData.password !== appleStoreSharedSecret) {
+      //   return 403;
+      // }
+
+      // Only process events where expiration changes are likely to occur
+      if (
+        ![
+          "CANCEL",
+          "DID_RENEW",
+          "DID_FAIL_TO_RENEW",
+          "DID_CHANGE_RENEWAL_STATUS",
+          // "DID_CHANGE_RENEWAL_PREF",
+          "INITIAL_BUY",
+          "INTERACTIVE_RENEWAL",
+          "REFUND",
+          "REVOKE",
+          "EXPIRED",
+        ].includes(eventData.notificationType)
+      ) {
+        console.log("RETURN 200", eventData.notificationType);
+        return 200;
       }
 
-      Promise.all(
-        Array.from(expirationMap).map(async ([user_id, status]) => {
-          this.setUserSubscription(user_id, status);
-        })
-      ).then(() => {
-        return 200;
-      });
-    });
+      let iap = JSON.parse(
+        base64url.decode(eventData["data"].signedTransactionInfo.split(".")[1])
+      );
+
+      console.log("Signed Transaction Info", iap);
+
+      const productData = productDataMap[iap.productId];
+
+      if (!productData) return;
+
+      var self = this;
+      async.waterfall(
+        [
+          function (done) {
+            switch (productData.type) {
+              case "SUBSCRIPTION":
+                let purchaseData = {
+                  iapSource: "app_store",
+                  orderId: iap.originalTransactionId,
+                  expirationDate: parseInt(iap.expiresDate, 10),
+                  status:
+                    Date.now() >= parseInt(iap.expiresDate, 10)
+                      ? "EXPIRED"
+                      : "ACTIVE",
+                };
+                const query = Purchase.findOneAndUpdate(
+                  { orderId: purchaseData.orderId },
+                  {
+                    iapSource: purchaseData.iapSource,
+                    orderId: purchaseData.orderId,
+                    expirationDate: purchaseData.expirationDate,
+                    status: purchaseData.status,
+                  }
+                );
+                query.exec(async (err, purchase) => {
+                  if (err) {
+                    done(err);
+                  } else if (!purchase) {
+                    done("purchase not found");
+                  } else {
+                    done(null, purchase.status, purchase.user_id);
+                  }
+                });
+                break;
+              case "NON_SUBSCRIPTION":
+                // Nothing to update yet about non-subscription purchases
+                done("no sub to handle");
+                break;
+            }
+          },
+          function (status, user_id, done) {
+            self.setUserSubscription(user_id, status, done);
+          },
+        ],
+        function (err) {
+          if (err) return 403;
+          else return 200;
+        }
+      );
+    } catch (e) {
+      console.log("ERRORE APPLE", e);
+      return 403;
+    }
   }
 }

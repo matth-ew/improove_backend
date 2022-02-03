@@ -1,4 +1,3 @@
-import { User } from "../models";
 import { ApplePurchaseHandler } from "../classes/ApplePurchaseHandler";
 import { GooglePurchaseHandler } from "../classes/GooglePurchaseHandler";
 import { productDataMap } from "../config/products";
@@ -31,32 +30,6 @@ var functions = {
         }
       }
     );
-    // console.log("UE PURCHASE DATA");
-    // console.log(purchaseData);
-    // if (purchaseData == null || purchaseData == false) {
-    //   return res.json({ success: false, msg: "Not valid payment" });
-    // } else {
-    //   return res.json({ success: true });
-    //   // let { status } = purchaseData;
-    //   // if (status == "ACTIVE" || status == "EXPIRED") {
-    //   //   let query = User.updateOne(
-    //   //     { _id: req.user.id },
-    //   //     {
-    //   //       subscribed: status == "ACTIVE" ? true : false,
-    //   //     }
-    //   //   );
-    //   //   query.exec((err /*, mongo_res*/) => {
-    //   //     if (err)
-    //   //       return res.json({
-    //   //         success: false,
-    //   //         error: err,
-    //   //       });
-    //   //     else return res.json({ success: true });
-    //   //   });
-    //   // } else {
-    //   //   return res.json({ success: true, status: purchaseData.status });
-    //   // }
-    // }
   },
   applePaymentEventCallback: async function (req, res) {
     let result = await purchaseHandlers.app_store.handleServerEvent(req, res);

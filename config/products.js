@@ -8,6 +8,10 @@ export const productDataMap = {
     type: "SUBSCRIPTION",
   },
   improove_12m_subscription: {
+    productId: "improove_6m_subscription",
+    type: "SUBSCRIPTION",
+  },
+  improove_12m_subscription: {
     productId: "improove_12m_subscription",
     type: "SUBSCRIPTION",
   },

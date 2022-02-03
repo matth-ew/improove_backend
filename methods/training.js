@@ -46,7 +46,10 @@ var functions = {
       let query = Training.findOne().where("_id").equals(parseInt(req.body.id));
       query.select(" +exercises.video ");
       query
-        .populate({ path: "trainer_id", select: "_id profileImage" })
+        .populate({
+          path: "trainer_id",
+          select: "_id profileImage name surname",
+        })
         .exec((err, training) => {
           if (err || !training) {
             console.log("error in load training by id", err);
