@@ -5,6 +5,7 @@ import { v4 as uuidv4 } from "uuid";
 import { s3AccessId, s3SecretKey } from "../config/config";
 import passport from "passport";
 import sharp from "sharp";
+const URL_EXPIRATION_SECONDS = 300;
 
 var s3 = new S3({
   accessKeyId: s3AccessId,
@@ -35,6 +36,19 @@ export function sendActivationMail({ to_mail, token }, callback) {
   promise
     .then((res) => callback(res, null))
     .catch((err) => callback(null, err));
+}
+
+export async function getSignedUrl({ bucket, key, type }) {
+  // Get signed URL from S3
+  const s3Params = {
+    Bucket: bucket,
+    Key: key,
+    ContentType: type,
+    Expires: URL_EXPIRATION_SECONDS,
+    ACL: "public-read",
+    CacheControl: "max-age=31536000",
+  };
+  return await s3.getSignedUrlPromise("putObject", s3Params);
 }
 
 export function saveImageToS3(file, { bucket, key, type }, callback) {

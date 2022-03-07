@@ -1,12 +1,114 @@
 import { Training, General } from "../models";
-import actionsUser from "../methods/user";
+// import actionsUser from "../methods/user";
 import async from "async";
 import training from "../models/training";
+import { getSignedUrl } from "./utils";
+import { bucket_train } from "../config/config";
 
 var functions = {
+  createTraining: function (req, res) {
+    try {
+      var req_t = req.body.training;
+      var exercises = req_t.exercises;
+      if (exercises.length == 0) {
+        return res.json({
+          success: false,
+          msg: "no exercises",
+        });
+      }
+
+      async.waterfall(
+        [
+          function (done) {
+            var newTraining = new Training();
+            newTraining.approved = false;
+            newTraining.trainer_id = req.user._id;
+            newTraining.title = req_t.title;
+            newTraining.description = req_t.description;
+            newTraining.preview = req_t.preview;
+            newTraining.category = req_t.category;
+            newTraining.save(function (err, training) {
+              done(err, training);
+            });
+          },
+          function (training, done) {
+            if (!training) {
+              done("error training save");
+            } else {
+              async.map(
+                [
+                  ...exercises.map((e) => e.video),
+                  ...exercises.map((e) => e.preview),
+                ],
+                (file, eachDone) => {
+                  var split = file.split(".");
+                  var type = split[split.length - 1];
+                  getSignedUrl({
+                    key: `${training.id}-${file}`,
+                    bucket: bucket_train,
+                    type: type == "mp4" ? "video/mp4" : "image/webp",
+                  })
+                    .then((url) => {
+                      if (type == "mp4") {
+                        let index = exercises.findIndex((e) => e.video == file);
+                        if (index != -1)
+                          exercises[index].video = url.split("?")[0];
+                      } else {
+                        let index = exercises.findIndex(
+                          (e) => e.preview == file
+                        );
+                        if (index != -1)
+                          exercises[index].preview = url.split("?")[0];
+                      }
+                      eachDone(null, {
+                        url: url,
+                        file: file,
+                        key: `${training.id}-${file}`,
+                      });
+                    })
+                    .catch((err) => eachDone(err));
+                },
+                function (err, results) {
+                  done(err, results, training);
+                }
+              );
+            }
+          },
+          function (urls, training, done) {
+            training.exercises = exercises;
+            training.preview = exercises[exercises.length - 1].preview;
+            training.save(function (err, training) {
+              done(err, urls, training);
+            });
+          },
+        ],
+        function (err, urls, training) {
+          if (err) {
+            return res.json({
+              success: false,
+              error: err,
+            });
+          } else {
+            return res.json({
+              success: true,
+              urls: urls,
+            });
+          }
+        }
+      );
+    } catch (e) {
+      console.log("error in createTraining", e);
+      return res.json({
+        success: false,
+        error: e,
+      });
+    }
+  },
   getTrainings: function (req, res) {
     try {
       let query = Training.find();
+      /* SOLO APPROVATI */
+      query.where("approved").ne(false);
       if (req.body.ids && req.body.ids.length > 0)
         query.where("_id").in(req.body.ids);
       if (req.body.newest && req.body.newest > 0) {
@@ -35,7 +137,7 @@ var functions = {
           }
         });
     } catch (e) {
-      console.log("error in load trainings", err);
+      console.log("error in load trainings", e);
       return res.json({
         success: false,
         error: e,
@@ -137,7 +239,7 @@ var functions = {
           }
         });
     } catch (e) {
-      console.log("error in load trainings by id", err);
+      console.log("error in load trainings by id", e);
       return res.json({
         success: false,
         error: e,

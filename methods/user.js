@@ -274,6 +274,28 @@ var functions = {
   //   });
   // },
 
+  getLatestTrainers: function (req, res) {
+    let query = User.find({ trainer: true }).sort({ createdAt: -1 }).limit(6);
+    query.select(
+      "name surname _id profileImage trainerDescription trainerImage"
+    );
+    query.exec((err, trainers) => {
+      if (err) {
+        console.log("error in load trainer by id", err);
+        return res.json({
+          success: false,
+          error: err,
+        });
+      } else {
+        console.log("TRAINERS", trainers);
+        return res.json({
+          success: true,
+          trainers: trainers,
+        });
+      }
+    });
+  },
+
   getTrainerById: function (req, res) {
     async.waterfall(
       [
