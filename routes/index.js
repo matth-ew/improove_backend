@@ -61,6 +61,11 @@ router.post(
 router.post("/createTraining", loggedIn, actionsTraining.createTraining);
 
 router.post("/getTrainings", actionsTraining.getTrainings);
+router.post(
+  "/getUnapprovedTrainings",
+  loggedIn,
+  actionsTraining.getUnapprovedTrainings
+);
 router.post("/getWeekTraining", actionsTraining.getWeekTraining);
 router.post("/getTrainingById", loggedIn, actionsTraining.getTrainingById);
 router.post("/getTrainerById", actionsUser.getTrainerById);

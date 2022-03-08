@@ -14,6 +14,7 @@ const UsersSchema = new Schema(
     testPass: { type: String, select: false },
     active: { type: Boolean, default: false },
     subscribed: { type: Boolean, default: false },
+    superuser: { type: Boolean, default: false },
     verifyKey: { type: String, default: "", select: false },
     terms: { type: Boolean, default: true },
     marketing: { type: Boolean, default: false },

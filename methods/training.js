@@ -144,6 +144,52 @@ var functions = {
       });
     }
   },
+  getUnapprovedTrainings: function (req, res) {
+    try {
+      if (!req.user.superuser) {
+        return res.json({
+          success: false,
+          error: "not superuser",
+        });
+      }
+      let query = Training.find();
+      /* SOLO APPROVATI */
+      query.where("approved").equals(false);
+      if (req.body.ids && req.body.ids.length > 0)
+        query.where("_id").in(req.body.ids);
+      if (req.body.newest && req.body.newest > 0) {
+        query.limit(req.body.newest);
+      }
+      query.sort({ _id: -1 });
+      query
+        // .select("_id title preview category exercises_length exercises.niente")
+        .populate({ path: "trainer_id", select: "_id profileImage" })
+        .exec((err, trainings) => {
+          if (err) {
+            console.log("error in load trainings", err);
+            return res.json({
+              success: false,
+              error: err,
+            });
+          } else {
+            return res.json({
+              success: true,
+              result: trainings.map((x) => {
+                var x_obj = x.toObject();
+                delete x_obj.exercises;
+                return x_obj;
+              }),
+            });
+          }
+        });
+    } catch (e) {
+      console.log("error in load trainings", e);
+      return res.json({
+        success: false,
+        error: e,
+      });
+    }
+  },
   getWeekTraining: function (req, res) {
     try {
       async.waterfall(
