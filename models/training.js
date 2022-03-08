@@ -1,6 +1,7 @@
 import mongoose from "mongoose";
 import ExerciseSchema from "./exercise";
 // import GoalSchema from "./goal";
+import Counter from "./counter";
 const Schema = mongoose.Schema;
 
 const TrainingsSchema = new Schema(
@@ -12,6 +13,7 @@ const TrainingsSchema = new Schema(
     preview: { type: String, default: "" },
     category: { type: String, default: "" },
     freeExercises: { type: Number, default: 0 },
+    approved: { type: Boolean, default: true },
     exercises: [ExerciseSchema],
     // goals: [GoalSchema],
   },
